@@ -247,3 +247,42 @@ x-if{display:contents}x-if[hidden]{display:none}html{scroll-behavior:smooth}/* �
   .cmp td::before{content:attr(data-label);color:#9A8FC4;font-size:13px}
   .cmp td:last-child{color:#2FD39B;font-weight:700}
 }
+
+/* ¿Es para ti? / No es para ti: check verde vs X roja */
+.fit h3{display:flex;align-items:center;gap:10px}
+.fit-badge{font-size:28px;line-height:0;flex:none}
+.fit-yes .fit-badge{color:#2FD39B}
+.fit-no .fit-badge{color:#FF6B8B}
+.fit li{display:flex;gap:12px;align-items:flex-start}
+.fit-mark{flex:none;width:26px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
+.fit-yes .fit-mark{background:rgba(47,211,155,.16);color:#2FD39B}
+.fit-no .fit-mark{background:rgba(255,107,139,.15);color:#FF6B8B}
+.fit-no li{color:#BFB4E2}
+
+/* Agente de Calendario con fechas */
+.cal-range{margin:0;font:500 12px 'JetBrains Mono',monospace;letter-spacing:.04em;text-transform:uppercase;color:#2FD39B}
+.cal-dot{display:flex;align-items:center;justify-content:center;font:600 11px 'JetBrains Mono',monospace;color:#B8ADE0}
+.cal-dot.on{color:#FFFFFF;font-weight:800}
+.btn-pop .ic,#buybar a .ic,.top-nav nav > a:last-child .ic{font-size:1.1em}
+
+/* Tablet y pantallas medianas (760–1179 px): portada en dos columnas.
+   Texto a la izquierda, teléfono con Atomín a la derecha y el chat debajo del texto. */
+@media (min-width:760px) and (max-width:1179px){
+  #top{display:grid !important;grid-template-columns:minmax(0,1fr) 210px;grid-template-areas:"text phone" "chat phone";column-gap:32px !important;row-gap:28px !important;align-items:start !important;padding-top:32px !important}
+  #top > div:not(.hero-out){grid-area:text}
+  #top h1{font-size:clamp(44px,6.2vw,58px) !important}
+  #top .hero-out{display:contents !important}
+  #top .hero-out .tilt-in{grid-area:chat;width:100%;max-width:540px !important}
+  #top .hero-out .phone{grid-area:phone;margin-top:235px !important;justify-self:center}
+  .m-bubble{right:16% !important;top:-16% !important;transform-origin:50% 100% !important}
+}
+/* Entre 1000 y 1179 px la mascota es más grande (330 px): más espacio sobre el teléfono */
+@media (min-width:1000px) and (max-width:1179px){
+  #top{grid-template-columns:minmax(0,1fr) 230px}
+  #top .hero-out .phone{margin-top:300px !important}
+}
+/* Celulares muy angostos: la barra de compra solo con precio y botón */
+@media (max-width:359px){
+  .buybar > div > div > span:last-child{display:none}
+  .buybar a{padding:12px 14px !important}
+}

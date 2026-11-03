@@ -83,6 +83,17 @@ var CONFIG = {
     if (!seen) openIntro(false); else render();
   }
 
+  // Agente de Calendario: los próximos 30 días con su fecha real
+  (function () {
+    var grid = $('[data-cal]'); if (!grid) return;
+    var meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    var hoy = new Date();
+    var dia = function (i) { return new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + i); };
+    $$('.cal-dot', grid).forEach(function (el, i) { var d = dia(i); el.textContent = d.getDate(); el.title = d.getDate() + ' ' + meses[d.getMonth()]; });
+    var fin = dia(29), r = $('[data-cal-range]');
+    if (r) r.textContent = 'Del ' + hoy.getDate() + ' ' + meses[hoy.getMonth()] + ' al ' + fin.getDate() + ' ' + meses[fin.getMonth()] + ' · un tema por día';
+  })();
+
   // Videos de muestra: se descargan solo cuando la persona llega a ellos
   var lazyV = $$('video[data-src]');
   if ('IntersectionObserver' in window) {

@@ -2,7 +2,7 @@
 # Los SVG se bajan una vez de la API de Iconify y quedan escritos dentro del HTML/JS (no se piden al cargar la página).
 # También genera lib/icons.ts para los componentes de React.
 # Uso: python scripts/iconos.py   (se puede correr más de una vez: lo ya reemplazado no se toca)
-import json, re, sys, urllib.request
+import json, re, sys, time, urllib.error, urllib.request
 
 ICONS = {
     # interfaz (Lucide)
@@ -17,30 +17,57 @@ ICONS = {
     'package': 'lucide:package', 'factory': 'lucide:factory', 'notebook': 'lucide:notebook-pen', 'party': 'lucide:party-popper',
     'atom': 'lucide:atom', 'sparkles': 'lucide:sparkles', 'pointer': 'lucide:pointer', 'mail': 'lucide:mail',
     'banknote': 'lucide:banknote', 'landmark': 'lucide:landmark',
+    'circle-x': 'lucide:circle-x', 'cart': 'lucide:shopping-cart',
     # marcas
     'instagram': 'simple-icons:instagram', 'pix': 'simple-icons:pix',
     'visa': 'logos:visa', 'mastercard': 'logos:mastercard', 'amex': 'logos:amex',
 }
 
-def fetch(icon):
-    prefix, name = icon.split(':')
-    req = urllib.request.Request(f'https://api.iconify.design/{prefix}/{name}.svg', headers={'User-Agent': 'Mozilla/5.0 (metodo-atomico iconos)'})
-    with urllib.request.urlopen(req, timeout=20) as r:
-        svg = r.read().decode()
-    if not svg.startswith('<svg'):
-        sys.exit(f'Iconify no devolvió {icon}')
-    # ids únicos por si un logo con degradado aparece varias veces
-    return svg
+def fetch_set(prefix, names):
+    # Una sola llamada por colección (API JSON de Iconify), para no topar con su límite de pedidos.
+    url = f'https://api.iconify.design/{prefix}.json?icons={",".join(names)}'
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (metodo-atomico iconos)'})
+    for intento in range(4):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return json.loads(r.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code != 429 or intento == 3:
+                raise
+            time.sleep(15 * (intento + 1))
 
-svgs = {k: fetch(v) for k, v in ICONS.items()}
+def to_svg(data, name):
+    alias = data.get('aliases', {}).get(name)
+    icon = data['icons'].get(alias['parent'] if alias else name)
+    if not icon:
+        sys.exit(f'Iconify no devolvió {data["prefix"]}:{name}')
+    w = icon.get('width', data.get('width', 16))
+    h = icon.get('height', data.get('height', 16))
+    width = '1em' if w == h else f'{round(w / h, 2)}em'
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="1em" viewBox="0 0 {w} {h}">{icon["body"]}</svg>'
+
+by_set = {}
+for key, full in ICONS.items():
+    prefix, name = full.split(':')
+    by_set.setdefault(prefix, []).append((key, name))
+svgs = {}
+for prefix, pairs in by_set.items():
+    data = fetch_set(prefix, [n for _, n in pairs])
+    for key, name in pairs:
+        svgs[key] = to_svg(data, name)
+# Copia local para otros scripts que necesiten los mismos íconos
+json.dump(svgs, open('scripts/icons-cache.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 
 def ic(key, cls='ic'):
     return svgs[key].replace('<svg ', f'<svg class="{cls}" aria-hidden="true" ', 1)
 
+EMOJI = re.compile('[🀀-🫿☀-➿️←-⇿■-◿✀-➿]|❚')
+
 def rep(text, old, new, label, required=True):
     if old in text:
         return text.replace(old, new)
-    if new in text or not required:
+    # Si ya no está el emoji, ese cambio ya se hizo en una corrida anterior.
+    if new in text or not required or not any(e in text for e in EMOJI.findall(old)):
         return text
     sys.exit(f'No encontré: {label}')
 
@@ -64,7 +91,7 @@ h = rep(h, '✏️ Pedir un cambio', f'{ic("pencil")} Pedir un cambio', 'pedir c
 h = rep(h, '>💳 Tarjeta<', f'>{ic("card")} Tarjeta {ic("visa", "ic ic-logo")}{ic("mastercard", "ic ic-logo")}{ic("amex", "ic ic-logo")}<', 'chip tarjeta')
 h = rep(h, '>Pix<', f'>{ic("pix")} Pix<', 'chip pix', required=False)
 h = rep(h, '>⚡ Acceso inmediato al correo<', f'>{ic("zap")} Acceso inmediato al correo<', 'chip acceso')
-h = rep(h, '>🛡️ Garantía de 7 días<', f'>{ic("shield")} Garantía de 7 días<', 'chip garantía')
+h = rep(h, '>🛡️ Garantía de 7 días<', f'>{ic("shield")} Garantía de 7 días<', 'chip garantía', required=False)
 h = rep(h, '>💬 ¿Dudas antes de comprar?', f'>{ic("instagram")} ¿Dudas antes de comprar?', 'dudas instagram')
 h = rep(h, '>📲 ¿Estás en el celular?', f'>{ic("smartphone")} ¿Estás en el celular?', 'guardar link')
 h = rep(h, '>🎁 Bonus La Bóveda', f'>{ic("gift")} Bonus La Bóveda', 'bonus')
@@ -106,7 +133,7 @@ f = rep(f, "<b>⚛️</b>'", f"<b>{js('atom')}</b>'", 'msg cosquillas')
 open(p, 'w', encoding='utf-8').write(f)
 
 # ---------- lib/icons.ts (React) ----------
-used = ['x', 'shield', 'lock', 'card', 'visa', 'mastercard', 'amex', 'circle-check', 'banknote', 'mail', 'zap', 'landmark']
+used = ['x', 'shield', 'lock', 'card', 'visa', 'mastercard', 'amex', 'circle-check', 'banknote', 'mail', 'zap', 'landmark', 'cart']
 with open('lib/icons.ts', 'w', encoding='utf-8') as out:
     out.write('// Generado por scripts/iconos.py desde la API de Iconify. No editar a mano.\n')
     out.write('export const ICONS = ' + json.dumps({k: svgs[k] for k in used}, ensure_ascii=False, indent=2) + ' as const;\n')

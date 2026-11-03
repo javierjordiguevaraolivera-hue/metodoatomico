@@ -10,6 +10,8 @@ Landing de **Método Atómico** en Next.js para Vercel (www.metodoatomico.lat). 
 - `app/api/dlocal/webhook`: dLocal Go avisa aquí cuando cambia un pago (firma verificada). Si quedó pagado, manda Purchase a la API de Conversiones de Meta.
 - `app/gracias`: página después de pagar. Si el pago está confirmado, dispara Purchase en los píxeles de Meta y TikTok y en la CAPI.
 - `components/Pixels.tsx`, `lib/track-client.ts`, `app/api/track`: píxeles de Meta y TikTok, más la CAPI de Meta y la Events API de TikTok (`lib/tiktok.ts`).
+- `app/acceso`, `app/mis-accesos`, `app/api/acceso`, `app/api/descarga`: acceso de compradores. Ponen su correo; si tiene un pago confirmado entran con una sesión firmada de 2 horas (`lib/session.ts`) a la guía y a las descargas del bucket privado `descargas`, con links que vencen en 2 minutos.
+- `lib/orders.ts`, `lib/supabase.ts`, `lib/brevo.ts`, `lib/emails.ts`: al confirmarse un pago (webhook o /gracias) se guarda el cliente y el pedido en Supabase y se manda una sola vez el correo de bienvenida por Brevo. Las tablas están en `supabase/schema.sql`.
 - `scripts/iconos.py`: cambia los emojis por íconos SVG de [Iconify](https://iconify.design) (Lucide, Simple Icons, Logos) y genera `lib/icons.ts`. Los SVG quedan dentro del código; la página no depende de Iconify al cargar.
 
 ## Eventos

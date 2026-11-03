@@ -5,6 +5,7 @@ import { CURRENCY, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
 import { getPayment, type DlocalPayment } from "@/lib/dlocal";
 import Icon from "@/components/Icon";
 import { personFromRequest, sendMetaEvent } from "@/lib/meta";
+import { recordPaidPayment } from "@/lib/orders";
 import { sendTikTokEvent } from "@/lib/tiktok";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,8 @@ export default async function Gracias({ searchParams }: { searchParams: Promise<
   const site = process.env.NEXT_PUBLIC_SITE_URL || "";
 
   if (paid) {
+    // Por si el aviso de dLocal Go todavía no llegó: registra la compra y manda la bienvenida (una sola vez).
+    await recordPaidPayment(payment, site || "https://www.metodoatomico.lat").catch((err) => console.error("gracias: registrar compra", err));
     const base = await personFromRequest();
     const person = { ...base, email: payment.payer?.email, firstName: payment.payer?.first_name, lastName: payment.payer?.last_name, country: payment.country || base.country };
     const sourceUrl = `${site}/gracias`;
@@ -31,7 +34,6 @@ export default async function Gracias({ searchParams }: { searchParams: Promise<
     ]);
   }
 
-  const access = process.env.PRODUCT_ACCESS_URL;
   const pending = payment?.status === "PENDING";
 
   return (
@@ -46,8 +48,8 @@ export default async function Gracias({ searchParams }: { searchParams: Promise<
           <>
             <span style={{ fontSize: 56, color: "#2FD39B", lineHeight: 0 }}><Icon name="circle-check" /></span>
             <h1 style={{ margin: 0, fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 36, lineHeight: 1.05 }}>¡Listo! Ya es tuyo.</h1>
-            <p style={{ margin: 0, color: "#D2C9EE" }}>Tu pago se confirmó. Te mandamos el acceso a <strong style={{ color: "#F7F4FF" }}>{payment.payer?.email || "tu correo"}</strong>. Si no lo ves en unos minutos, revisa la carpeta de spam.</p>
-            {access && <a href={access} style={{ background: "#119564", color: "#fff", textDecoration: "none", padding: "16px 26px", borderRadius: 14, fontWeight: 800, fontSize: 18 }}>Descargar Método Atómico</a>}
+            <p style={{ margin: 0, color: "#D2C9EE" }}>Tu pago se confirmó. Entra ya mismo con tu correo, y también te mandamos el acceso a <strong style={{ color: "#F7F4FF" }}>{payment.payer?.email || "tu correo"}</strong> (si no lo ves, revisa spam).</p>
+            <a href={`/acceso?email=${encodeURIComponent(payment.payer?.email ?? "")}`} style={{ background: "#119564", color: "#fff", textDecoration: "none", padding: "16px 26px", borderRadius: 14, fontWeight: 800, fontSize: 18 }}>Entrar a mi acceso →</a>
           </>
         ) : pending ? (
           <>

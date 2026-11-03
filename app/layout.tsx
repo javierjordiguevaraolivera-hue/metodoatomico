@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./landing.css";
 import "./checkout.css";
 import "./legal.css";
+import "./acceso.css";
 
 const site = process.env.NEXT_PUBLIC_SITE_URL || "https://www.metodoatomico.lat";
 

@@ -18,6 +18,7 @@ ICONS = {
     'atom': 'lucide:atom', 'sparkles': 'lucide:sparkles', 'pointer': 'lucide:pointer', 'mail': 'lucide:mail',
     'banknote': 'lucide:banknote', 'landmark': 'lucide:landmark',
     'circle-x': 'lucide:circle-x', 'cart': 'lucide:shopping-cart',
+    'download': 'lucide:download', 'log-out': 'lucide:log-out', 'clock': 'lucide:clock', 'folder': 'lucide:folder-open', 'monitor': 'lucide:monitor',
     # marcas
     'instagram': 'simple-icons:instagram', 'pix': 'simple-icons:pix',
     'visa': 'logos:visa', 'mastercard': 'logos:mastercard', 'amex': 'logos:amex',
@@ -133,7 +134,8 @@ f = rep(f, "<b>⚛️</b>'", f"<b>{js('atom')}</b>'", 'msg cosquillas')
 open(p, 'w', encoding='utf-8').write(f)
 
 # ---------- lib/icons.ts (React) ----------
-used = ['x', 'shield', 'lock', 'card', 'visa', 'mastercard', 'amex', 'circle-check', 'banknote', 'mail', 'zap', 'landmark', 'cart']
+used = ['x', 'shield', 'lock', 'card', 'visa', 'mastercard', 'amex', 'circle-check', 'banknote', 'mail', 'zap', 'landmark', 'cart',
+        'download', 'log-out', 'clock', 'folder', 'monitor', 'file-text', 'file-video', 'image', 'package', 'instagram', 'sparkles', 'play', 'gift']
 with open('lib/icons.ts', 'w', encoding='utf-8') as out:
     out.write('// Generado por scripts/iconos.py desde la API de Iconify. No editar a mano.\n')
     out.write('export const ICONS = ' + json.dumps({k: svgs[k] for k in used}, ensure_ascii=False, indent=2) + ' as const;\n')

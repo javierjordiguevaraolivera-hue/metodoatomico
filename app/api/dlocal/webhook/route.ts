@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { CURRENCY, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
 import { getPayment, verifyNotification, visitorFromOrderId } from "@/lib/dlocal";
 import { sendMetaEvent, type Person } from "@/lib/meta";
+import { recordPaidPayment } from "@/lib/orders";
 import { sendTikTokEvent } from "@/lib/tiktok";
 
 // dLocal Go avisa aquí cada cambio de estado de un pago. Si quedó pagado, se manda Purchase a la CAPI de Meta
@@ -18,6 +19,8 @@ export async function POST(req: Request) {
     const p = await getPayment(paymentId);
     if (p.status === "PAID") {
       const site = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+      // Primero el cliente en Supabase y su correo de bienvenida; si falla, dLocal Go reintenta.
+      await recordPaidPayment(p, site);
       const id = `purchase_${p.id}`;
       const sourceUrl = `${site}/gracias`;
       const person: Person = {

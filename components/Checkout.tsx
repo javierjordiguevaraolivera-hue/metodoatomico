@@ -216,7 +216,7 @@ export default function Checkout() {
             <a className="ck-alt" href={payment.redirectUrl}><Icon name="banknote" /> ¿Prefieres efectivo, transferencia u otro método de tu país? Paga aquí</a>
           )}
           <ul className="ck-trust">
-            <li><Icon name="shield" /> Garantía: pruébalo 7 días</li>
+            <li><Icon name="shield" /> Garantía de 7 días</li>
             <li><Icon name="zap" /> Acceso inmediato al correo</li>
             <li><Icon name="lock" /> Datos cifrados por dLocal Go</li>
           </ul>

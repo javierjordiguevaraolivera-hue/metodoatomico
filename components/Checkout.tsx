@@ -53,7 +53,7 @@ type FieldType = "pan" | "expiration" | "cvv";
 const PLACEHOLDERS: Record<FieldType, string> = { pan: "1234 1234 1234 1234", expiration: "MM / AA", cvv: "CVV" };
 const NOT_FILLED: Record<FieldType, boolean> = { pan: false, expiration: false, cvv: false };
 
-// Ícono de tarjeta vacía, el mismo dibujo que usa dLocal, pero fijo y nuestro (no aparece de golpe).
+// Copia del ícono de tarjeta vacía de dLocal, en el mismo lugar: se ve mientras carga su campo y luego queda el de dLocal (que cambia a la marca).
 function CardIcon() {
   return (
     <svg viewBox="0 0 32 21" aria-hidden="true">
@@ -85,9 +85,10 @@ export default function Checkout() {
   const [installments, setInstallments] = useState<Installment[]>([]);
   // Marca que detecta dLocal con los primeros 6 dígitos: VI (Visa), MC (Mastercard), AM (Amex)…
   const [brand, setBrand] = useState("");
-  // El ícono y los placeholders de la tarjeta los dibujamos nosotros, fijos desde que abre el checkout:
-  // dLocal solo pone lo que la persona escribe. El placeholder se esconde cuando dLocal avisa que el campo ya no está vacío.
+  // Los placeholders de la tarjeta son nuestros, fijos desde que abre el checkout (dLocal no dibuja el suyo):
+  // se esconden cuando dLocal avisa que el campo ya no está vacío.
   const [filled, setFilled] = useState(NOT_FILLED);
+  const [panReady, setPanReady] = useState(false);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", documentType: "", document: "", installmentsId: "" });
   // Tarjeta como Stripe: número en una fila; vencimiento y CVV debajo, cada uno en su campo seguro de dLocal.
   const panBox = useRef<HTMLDivElement>(null);
@@ -136,7 +137,7 @@ export default function Checkout() {
     const id = ++attempt.current;
     const stale = () => id !== attempt.current;
     (async () => {
-      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setBrand("");
+      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setPanReady(false);
       // El SDK baja al mismo tiempo que se crea el pago (antes iba uno detrás del otro).
       const sdkLoad = SMARTFIELDS_KEY ? loadSdk() : null;
       sdkLoad?.catch(() => {});
@@ -161,8 +162,9 @@ export default function Checkout() {
           box.innerHTML = "";
           const slot = document.createElement("div");
           box.appendChild(slot);
-          // Placeholder " " (vacío muestra el "Card number" de dLocal) y sin su ícono: los dos son nuestros.
-          const field = fields.create(type, { style: cardStyle, placeholder: " ", hideIcon: true });
+          // Placeholder " ": vacío, dLocal muestra su "Card number".
+          const field = fields.create(type, { style: cardStyle, placeholder: " " });
+          if (type === "pan") field.on?.("ready", () => { if (!stale()) setPanReady(true); });
           field.on?.("empty", (e?: { empty?: boolean }) => { if (!stale()) setFilled((f) => ({ ...f, [type]: e?.empty === false })); });
           field.mount(slot);
           return field;
@@ -263,7 +265,7 @@ export default function Checkout() {
                 </span></span>
                 <div className="ck-cardbox">
                   <div className="ck-card ck-card-pan">
-                    <span className="ck-pan-ic">{brand === "VI" ? <Icon name="visa" logo /> : brand === "MC" ? <Icon name="mastercard" logo /> : brand === "AM" ? <Icon name="amex" logo /> : <CardIcon />}</span>
+                    {!panReady && <span className="ck-pan-ic"><CardIcon /></span>}
                     <div ref={panBox} />{!filled.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}
                   </div>
                   <div className="ck-card-row">

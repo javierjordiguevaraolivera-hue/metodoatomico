@@ -1,10 +1,6 @@
 /* Ventana de checkout (components/Checkout.tsx). Mobile first: en el celular es una hoja a pantalla completa
    que sube desde abajo, con el botón de pago siempre a la vista; desde 600px es una ventana centrada. */
-.ck-overlay{position:fixed;inset:0;z-index:120;background:rgba(12,6,30,.86);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;animation:ckFade .2s ease}
-@keyframes ckFade{from{opacity:0}}
-/* Se arma escondido mientras cargan los campos de dLocal; al quitar la clase arrancan las animaciones de entrada */
-.ck-overlay.ck-prep{opacity:0;pointer-events:none;animation:none}
-.ck-prep .ck-panel{animation:none !important}
+.ck-overlay{position:fixed;inset:0;z-index:120;background:rgba(12,6,30,.86);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center}
 .ck-panel{width:100%;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;background:#1D1240;border-top:1px solid #35276A;border-radius:22px 22px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-sizing:border-box;color:#F7F4FF;font-family:Inter,system-ui,sans-serif;animation:ckUp .32s cubic-bezier(.2,.9,.3,1)}
 @keyframes ckUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 @keyframes ckPop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}

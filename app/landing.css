@@ -214,9 +214,6 @@ x-if{display:contents}x-if[hidden]{display:none}html{scroll-behavior:smooth}/* �
 .ic-logo{width:auto;height:1.15em;background:#fff;border-radius:4px;padding:1px 4px;box-sizing:border-box;vertical-align:-.25em;margin-left:3px}
 .ic-wrap{display:inline-flex;flex:none;line-height:0}
 .ic-wrap svg{width:1em;height:1em}
-/* Botón de compra que se tocó, mientras se prepara el checkout: pulso suave (sirve para cualquier botón) */
-.ma-busy{pointer-events:none;cursor:progress;animation:maBusy .7s ease-in-out infinite alternate}
-@keyframes maBusy{to{opacity:.55}}
 .ic-wrap-logo{background:#fff;border-radius:5px;padding:3px 6px;height:1.5em;box-sizing:border-box;align-items:center}
 .ic-wrap-logo svg{width:auto;height:100%}
 

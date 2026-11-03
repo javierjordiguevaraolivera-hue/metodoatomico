@@ -149,15 +149,6 @@ export default function Checkout() {
   const card = useRef<CardField | null>(null);
   // Marca que reconoce dLocal mientras escriben el número ("visa", "mastercard"…), para el ícono del campo.
   const [panBrand, setPanBrand] = useState("");
-  // El checkout se arma escondido y aparece cuando los campos de dLocal ya están listos;
-  // mientras tanto el botón que tocaron se ve "cargando".
-  const [shown, setShown] = useState(false);
-  const busyEl = useRef<HTMLElement | null>(null);
-  const reveal = useCallback(() => {
-    setShown(true);
-    busyEl.current?.classList.remove("ma-busy");
-    busyEl.current = null;
-  }, []);
   const requested = useRef("");
   const attempt = useRef(0);
 
@@ -179,10 +170,7 @@ export default function Checkout() {
 
   // Los botones "Comprar" de la página disparan este evento (public/landing/runtime.js).
   useEffect(() => {
-    const onBuy = (e: Event) => {
-      const el = (e as CustomEvent<{ el?: HTMLElement }>).detail?.el;
-      if (el && !busyEl.current) { el.classList.add("ma-busy"); busyEl.current = el; }
-      setShown(false);
+    const onBuy = () => {
       setOpen(true);
       track("InitiateCheckout", { value: PRICE_USD, currency: CURRENCY, content_name: PRODUCT_NAME, content_type: "product", num_items: 1 });
     };
@@ -190,13 +178,7 @@ export default function Checkout() {
     return () => window.removeEventListener("ma:checkout", onBuy);
   }, []);
 
-  const close = useCallback(() => { if (!paying) { setOpen(false); reveal(); } }, [paying, reveal]);
-
-  useEffect(() => {
-    if (!open || shown) return;
-    const t = setTimeout(reveal, 6000);
-    return () => clearTimeout(t);
-  }, [open, shown, reveal]);
+  const close = useCallback(() => { if (!paying) setOpen(false); }, [paying]);
 
   useEffect(() => {
     if (!open) return;
@@ -226,7 +208,7 @@ export default function Checkout() {
         const docs = COUNTRIES.find((c) => c.code === data.country)?.docs ?? [];
         setForm((f) => ({ ...f, documentType: docs.includes(f.documentType) ? f.documentType : docs[0] ?? "", installmentsId: "" }));
 
-        if (!SMARTFIELDS_KEY || !data.checkoutToken) { reveal(); return; }
+        if (!SMARTFIELDS_KEY || !data.checkoutToken) return;
         const sdk = window.dlocalGo!;
         if (stale() || !panBox.current || !expBox.current || !cvvBox.current) return;
         // Contenedores nuevos en cada intento: si se vuelve a montar en el mismo (al cambiar de país), dLocal deja el campo vacío.
@@ -245,17 +227,11 @@ export default function Checkout() {
         card.current = mount(panBox.current, "pan");
         mount(expBox.current, "expiration");
         mount(cvvBox.current, "cvv");
-        // El checkout aparece cuando los tres campos de dLocal terminaron de aparecer (ellos los muestran de a poco).
-        const boxes = [panBox.current, expBox.current, cvvBox.current];
-        const ready = () => boxes.every((b) => [...b.querySelectorAll("iframe")].some((f) => f.getBoundingClientRect().height > 0 && Number(getComputedStyle(f).opacity) > 0.99));
-        const wait = () => { if (stale()) return; if (ready()) reveal(); else requestAnimationFrame(wait); };
-        requestAnimationFrame(wait);
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
         sdk.onCardBinChange?.((bin) => setBrand(bin?.brand ?? ""));
         setCardReady(true);
       } catch (err) {
         if (stale()) return;
-        reveal();
         setError(err instanceof Error && err.message !== "error" && err.message !== "sdk" ? err.message : "No pudimos cargar el pago. Revisa tu conexión e intenta de nuevo.");
         requested.current = "";
         setCountry((c) => c || DEFAULT_COUNTRY);
@@ -296,7 +272,7 @@ export default function Checkout() {
   const withCard = Boolean(SMARTFIELDS_KEY);
 
   return (
-    <div className={shown ? "ck-overlay" : "ck-overlay ck-prep"} role="dialog" aria-modal="true" aria-label="Pagar Método Atómico" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
+    <div className="ck-overlay" role="dialog" aria-modal="true" aria-label="Pagar Método Atómico" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div className="ck-panel">
         <div className="ck-head">
           <div>

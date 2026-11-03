@@ -83,3 +83,10 @@
   .ck-panel{position:relative}
   .ck-title{font-size:30px}
 }
+/* Ejemplos (placeholders): en gris y en cursiva para que no parezcan datos ya escritos */
+.ck-field input::placeholder{color:#6F649F;font-style:italic;font-weight:400;opacity:1}
+/* Marca detectada: se ilumina su logo y los otros se apagan */
+.ck-brands > span{display:inline-flex;transition:opacity .2s,transform .2s}
+.ck-brands.has-brand > span{opacity:.25}
+.ck-brands.has-brand > span.on{opacity:1;transform:scale(1.08)}
+.ck-hint{font-size:12px;color:#AEA3D3;margin-top:2px}

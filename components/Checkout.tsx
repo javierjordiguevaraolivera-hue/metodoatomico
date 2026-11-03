@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CURRENCY, DLOCALGO_SDK_URL, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
-import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries";
+import { COUNTRIES, DEFAULT_COUNTRY, docExample } from "@/lib/countries";
 import { track } from "@/lib/track-client";
 import Icon from "./Icon";
 
@@ -18,6 +18,7 @@ type DlocalGo = {
   fields: () => { create: (type: "pan" | "expiration" | "cvv", opts: object) => CardField };
   createCardToken: (field: CardField, data: { name: string }) => Promise<{ token: string }>;
   onInstallmentsChange?: (cb: (list: Installment[] | null) => void) => void;
+  onCardBinChange?: (cb: (bin: { brand?: string } | null) => void) => void;
 };
 declare global { interface Window { dlocalGo?: DlocalGo } }
 
@@ -36,7 +37,7 @@ function loadSdk() {
 }
 
 const cardStyle = {
-  base: { fontSize: "16px", lineHeight: "24px", fontFamily: "Inter, system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#7D72AE" }, iconColor: "#AEA3D3" },
+  base: { fontSize: "16px", lineHeight: "24px", fontFamily: "Inter, system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#6F649F", fontStyle: "italic" }, iconColor: "#AEA3D3" },
   invalid: { color: "#FF6B8B", iconColor: "#FF6B8B" },
   focus: { color: "#FFFFFF" },
 };
@@ -52,6 +53,8 @@ export default function Checkout() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const [installments, setInstallments] = useState<Installment[]>([]);
+  // Marca que detecta dLocal con los primeros 6 dígitos: VI (Visa), MC (Mastercard), AM (Amex)…
+  const [brand, setBrand] = useState("");
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", documentType: "", document: "", installmentsId: "" });
   // Tarjeta como Stripe: número en una fila; vencimiento y CVV debajo, cada uno en su campo seguro de dLocal.
   const panBox = useRef<HTMLDivElement>(null);
@@ -118,10 +121,11 @@ export default function Checkout() {
           field.mount(slot);
           return field;
         };
-        card.current = mount(panBox.current, "pan", "1234 1234 1234 1234");
-        mount(expBox.current, "expiration", "MM/AA");
-        mount(cvvBox.current, "cvv", "CVV");
+        card.current = mount(panBox.current, "pan", "1234 5678 9012 3456");
+        mount(expBox.current, "expiration", "MM/AA (12/29)");
+        mount(cvvBox.current, "cvv", "CVV (123)");
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
+        sdk.onCardBinChange?.((bin) => setBrand(bin?.brand ?? ""));
         setCardReady(true);
       } catch (err) {
         if (stale()) return;
@@ -143,7 +147,7 @@ export default function Checkout() {
       const res = await fetch("/api/checkout/confirm", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...form, checkoutToken: payment.checkoutToken, cardToken: token }),
+        body: JSON.stringify({ ...form, documentType: docType, checkoutToken: payment.checkoutToken, cardToken: token }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -158,6 +162,8 @@ export default function Checkout() {
 
   if (!open) return null;
   const docs = COUNTRIES.find((c) => c.code === country)?.docs ?? [];
+  // Tipo de documento válido para el país elegido (aunque el pago todavía no haya cargado)
+  const docType = docs.includes(form.documentType) ? form.documentType : docs[0] ?? "";
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const withCard = Boolean(SMARTFIELDS_KEY);
 
@@ -191,20 +197,24 @@ export default function Checkout() {
           {withCard && (
             <>
               <div className="ck-row">
-                <label className="ck-field"><span>Nombre</span><input required autoComplete="given-name" value={form.firstName} onChange={set("firstName")} disabled={paying} /></label>
-                <label className="ck-field"><span>Apellido</span><input required autoComplete="family-name" value={form.lastName} onChange={set("lastName")} disabled={paying} /></label>
+                <label className="ck-field"><span>Nombre</span><input required autoComplete="given-name" placeholder="Ej.: María" value={form.firstName} onChange={set("firstName")} disabled={paying} /></label>
+                <label className="ck-field"><span>Apellido</span><input required autoComplete="family-name" placeholder="Ej.: García" value={form.lastName} onChange={set("lastName")} disabled={paying} /></label>
               </div>
-              <label className="ck-field"><span>Correo (ahí te llega el acceso)</span><input required type="email" autoComplete="email" inputMode="email" value={form.email} onChange={set("email")} disabled={paying} /></label>
+              <label className="ck-field"><span>Correo (ahí te llega el acceso)</span><input required type="email" autoComplete="email" inputMode="email" placeholder="Ej.: tucorreo@gmail.com" value={form.email} onChange={set("email")} disabled={paying} /></label>
               <div className="ck-row ck-doc">
                 <label className="ck-field"><span>Documento</span>
-                  <select value={form.documentType} onChange={set("documentType")} disabled={paying}>
+                  <select value={docType} onChange={set("documentType")} disabled={paying}>
                     {docs.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </label>
-                <label className="ck-field"><span>Número</span><input required value={form.document} onChange={set("document")} disabled={paying} /></label>
+                <label className="ck-field"><span>Número</span><input required placeholder={docExample(country, docType)} value={form.document} onChange={set("document")} disabled={paying} /></label>
               </div>
               <div className="ck-field">
-                <span className="ck-card-label">Tarjeta de crédito o débito <span className="ck-brands"><Icon name="visa" logo /><Icon name="mastercard" logo /><Icon name="amex" logo /></span></span>
+                <span className="ck-card-label">Tarjeta de crédito o débito <span className={brand ? "ck-brands has-brand" : "ck-brands"}>
+                  <span className={brand === "VI" ? "on" : ""}><Icon name="visa" logo /></span>
+                  <span className={brand === "MC" ? "on" : ""}><Icon name="mastercard" logo /></span>
+                  <span className={brand === "AM" ? "on" : ""}><Icon name="amex" logo /></span>
+                </span></span>
                 <div className="ck-cardbox">
                   <div className="ck-card ck-card-pan" ref={panBox} />
                   <div className="ck-card-row">
@@ -212,6 +222,7 @@ export default function Checkout() {
                     <div className="ck-card ck-card-cvv" ref={cvvBox} />
                   </div>
                 </div>
+                {brand === "AM" && <div className="ck-hint">American Express: el CVV son 4 dígitos al frente de la tarjeta.</div>}
                 {loading && <div className="ck-note">Cargando el pago seguro…</div>}
               </div>
               {installments.length > 0 && (

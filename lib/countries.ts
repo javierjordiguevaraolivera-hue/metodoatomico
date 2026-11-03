@@ -25,23 +25,23 @@ export function isCountry(code: unknown): code is string {
 
 // Ejemplo de cómo se escribe cada documento (placeholder del checkout). Clave "PAÍS:TIPO".
 const DOC_EXAMPLES: Record<string, string> = {
-  "AR:DNI": "30123456", "AR:CUIT": "20301234567", "AR:CUIL": "20301234567",
-  "BO:CI": "1234567",
-  "BR:CPF": "12345678909",
-  "CL:RUT": "12345678-9",
-  "CO:CC": "1012345678", "CO:CE": "123456", "CO:NIT": "900123456",
-  "CR:CI": "112345678",
-  "EC:CI": "1712345678", "EC:RUC": "1712345678001",
-  "SV:DUI": "01234567-8",
-  "GT:DPI": "1234567890101",
-  "MX:CURP": "GOMA850101HDFRRN09", "MX:RFC": "GOMA850101AB1",
-  "PA:CIP": "8-123-456",
-  "PY:CI": "1234567", "PY:RUC": "1234567-8",
-  "PE:DNI": "12345678", "PE:CE": "001234567", "PE:RUC": "20123456789",
-  "DO:ID": "00112345678",
-  "UY:CI": "12345678", "UY:RUT": "211234560018",
+  "AR:DNI": "35874126", "AR:CUIT": "20358741263", "AR:CUIL": "27358741264",
+  "BO:CI": "6548712",
+  "BR:CPF": "52998224725",
+  "CL:RUT": "15874236-5",
+  "CO:CC": "1023875416", "CO:CE": "487215", "CO:NIT": "900874512",
+  "CR:CI": "115870436",
+  "EC:CI": "1718547632", "EC:RUC": "1718547632001",
+  "SV:DUI": "05487126-3",
+  "GT:DPI": "2547812360101",
+  "MX:CURP": "GARM920415MDFRRS08", "MX:RFC": "GARM920415K27",
+  "PA:CIP": "8-845-1236",
+  "PY:CI": "4587123", "PY:RUC": "4587123-6",
+  "PE:DNI": "45873216", "PE:CE": "001538742", "PE:RUC": "20548763219",
+  "DO:ID": "40215874369",
+  "UY:CI": "45871236", "UY:RUT": "215487630017",
 };
 
 export function docExample(country: string, type: string) {
-  return `Ej.: ${DOC_EXAMPLES[`${country}:${type}`] ?? "12345678"}`;
+  return `Ej.: ${DOC_EXAMPLES[`${country}:${type}`] ?? "45873216"}`;
 }

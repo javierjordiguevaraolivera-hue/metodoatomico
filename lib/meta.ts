@@ -19,12 +19,15 @@ export type Person = {
   userAgent?: string;
   fbp?: string;
   fbc?: string;
+  // TikTok
+  ttp?: string;
+  ttclid?: string;
 };
 
 const sha256 = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
 const clean = (v: string | undefined, squash = false) => {
   if (!v) return undefined;
-  let s = v.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  let s = v.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
   if (squash) s = s.replace(/[^a-z0-9]/g, "");
   return s || undefined;
 };
@@ -39,10 +42,13 @@ export async function personFromRequest(sourceUrl?: string): Promise<Person> {
     try { return v ? decodeURIComponent(v) : undefined; } catch { return v || undefined; }
   };
   let fbc = c.get("_fbc")?.value;
-  if (!fbc && sourceUrl) {
+  let ttclid = c.get("ma_ttclid")?.value;
+  if (sourceUrl) {
     try {
-      const fbclid = new URL(sourceUrl).searchParams.get("fbclid");
-      if (fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
+      const params = new URL(sourceUrl).searchParams;
+      const fbclid = params.get("fbclid");
+      if (!fbc && fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
+      ttclid = params.get("ttclid") || ttclid;
     } catch {}
   }
   return {
@@ -50,6 +56,8 @@ export async function personFromRequest(sourceUrl?: string): Promise<Person> {
     userAgent: h.get("user-agent") || undefined,
     fbp: c.get("_fbp")?.value,
     fbc,
+    ttp: c.get("_ttp")?.value,
+    ttclid,
     externalId: c.get("ma_vid")?.value,
     country: geo("x-vercel-ip-country"),
     region: geo("x-vercel-ip-country-region"),

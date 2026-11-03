@@ -13,7 +13,7 @@ let viewSent = false;
 
 // Píxeles de Meta y TikTok.
 // Página principal: PageView al entrar y ViewContent la primera vez que bajan.
-// Página de gracias: PageView + Purchase (con el mismo event_id que manda el servidor a la CAPI).
+// Página de gracias: PageView + Purchase (con el mismo event_id que manda el servidor a las APIs de Meta y TikTok).
 export default function Pixels({ viewContentOnScroll = false, purchase, userData = {} }: {
   viewContentOnScroll?: boolean;
   purchase?: Purchase;
@@ -23,6 +23,9 @@ export default function Pixels({ viewContentOnScroll = false, purchase, userData
     if (started) return;
     started = true;
     const vid = visitorId();
+    // El ttclid del anuncio de TikTok se guarda para mandarlo en los eventos de después (checkout, compra).
+    const ttclid = new URLSearchParams(location.search).get("ttclid");
+    if (ttclid) document.cookie = `ma_ttclid=${encodeURIComponent(ttclid)}; Max-Age=${60 * 60 * 24 * 30}; Path=/; SameSite=Lax`;
     loadMetaPixel(META_PIXEL_ID, { external_id: vid, ...userData });
     loadTikTokPixel(TIKTOK_PIXEL_ID, { email: userData.em, external_id: vid });
     trackPageView();

@@ -1,7 +1,7 @@
 "use client";
 
 // Lado navegador. Meta: píxel + copia a /api/track para la CAPI, con el mismo event_id para deduplicar.
-// TikTok: solo píxel, con el mismo event_id.
+// TikTok: píxel + Events API (también vía /api/track), con el mismo event_id.
 
 type Fbq = ((...args: unknown[]) => void) & { callMethod?: (...a: unknown[]) => void; queue?: unknown[][]; loaded?: boolean; version?: string; push?: unknown };
 type Ttq = unknown[] & Record<string, unknown> & {

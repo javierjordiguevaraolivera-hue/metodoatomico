@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CURRENCY, DLOCALGO_SDK_URL, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
 import { COUNTRIES } from "@/lib/countries";
 import { track } from "@/lib/track-client";
+import Icon from "./Icon";
 
 // Checkout de dLocal Go dentro de la página. La tarjeta se escribe en el campo seguro de dLocal
 // (SmartFields); el resto de métodos (efectivo, transferencia…) se pagan en el checkout de dLocal.
@@ -147,10 +148,10 @@ export default function Checkout() {
       <div className="ck-panel">
         <div className="ck-head">
           <div>
-            <div className="ck-kicker">Pago seguro</div>
+            <div className="ck-kicker"><Icon name="lock" /> Pago seguro</div>
             <div className="ck-title">{PRODUCT_NAME}</div>
           </div>
-          <button type="button" className="ck-x" onClick={close} aria-label="Cerrar" disabled={paying}>✕</button>
+          <button type="button" className="ck-x" onClick={close} aria-label="Cerrar" disabled={paying}><Icon name="x" /></button>
         </div>
         <div className="ck-price"><span>${PRICE_USD}</span> USD · pago único · acceso de por vida</div>
 
@@ -179,7 +180,7 @@ export default function Checkout() {
                 <label className="ck-field"><span>Número</span><input required value={form.document} onChange={set("document")} disabled={paying} /></label>
               </div>
               <div className="ck-field">
-                <span>Tarjeta de crédito o débito</span>
+                <span className="ck-card-label">Tarjeta de crédito o débito <span className="ck-brands"><Icon name="visa" logo /><Icon name="mastercard" logo /><Icon name="amex" logo /></span></span>
                 <div className="ck-card" ref={cardBox} />
                 {loading && <div className="ck-note">Cargando el pago seguro…</div>}
               </div>
@@ -197,17 +198,22 @@ export default function Checkout() {
           {error && <div className="ck-error" role="alert">{error}</div>}
 
           {withCard ? (
-            <button type="submit" className="ck-pay" disabled={!cardReady || paying}>{paying ? "Procesando…" : `Pagar $${PRICE_USD} USD`}</button>
+            <button type="submit" className="ck-pay" disabled={!cardReady || paying}>{paying ? "Procesando…" : <><Icon name="lock" /> Pagar ${PRICE_USD} USD</>}</button>
           ) : (
             <a className="ck-pay" href={payment?.redirectUrl || "#"} aria-disabled={!payment?.redirectUrl} onClick={(e) => { if (!payment?.redirectUrl) e.preventDefault(); }}>
-              {loading ? "Preparando el pago…" : "Continuar al pago seguro"}
+              {loading ? "Preparando el pago…" : <><Icon name="lock" /> Continuar al pago seguro</>}
             </a>
           )}
 
           {withCard && payment?.redirectUrl && (
-            <a className="ck-alt" href={payment.redirectUrl}>¿Prefieres efectivo, transferencia u otro método de tu país? Paga aquí</a>
+            <a className="ck-alt" href={payment.redirectUrl}><Icon name="banknote" /> ¿Prefieres efectivo, transferencia u otro método de tu país? Paga aquí</a>
           )}
-          <div className="ck-note">🛡️ Garantía de 7 días · Procesado por dLocal Go · El cobro se hace en tu moneda local si aplica.</div>
+          <ul className="ck-trust">
+            <li><Icon name="shield" /> Garantía de 7 días</li>
+            <li><Icon name="zap" /> Acceso inmediato al correo</li>
+            <li><Icon name="lock" /> Datos cifrados por dLocal Go</li>
+          </ul>
+          <div className="ck-note">El cobro se hace en tu moneda local si aplica.</div>
         </form>
       </div>
     </div>

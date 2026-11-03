@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 import Pixels from "@/components/Pixels";
 import { CURRENCY, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
 import { getPayment, type DlocalPayment } from "@/lib/dlocal";
+import Icon from "@/components/Icon";
 import { personFromRequest, sendMetaEvent } from "@/lib/meta";
+import { sendTikTokEvent } from "@/lib/tiktok";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Gracias · Método Atómico", robots: { index: false } };
@@ -20,14 +22,13 @@ export default async function Gracias({ searchParams }: { searchParams: Promise<
   const site = process.env.NEXT_PUBLIC_SITE_URL || "";
 
   if (paid) {
-    const person = await personFromRequest();
-    await sendMetaEvent({
-      name: "Purchase",
-      id: eventId,
-      sourceUrl: `${site}/gracias`,
-      person: { ...person, email: payment.payer?.email, firstName: payment.payer?.first_name, lastName: payment.payer?.last_name, country: payment.country || person.country },
-      customData: { value: PRICE_USD, currency: CURRENCY, content_name: PRODUCT_NAME, content_type: "product", order_id: payment.order_id },
-    });
+    const base = await personFromRequest();
+    const person = { ...base, email: payment.payer?.email, firstName: payment.payer?.first_name, lastName: payment.payer?.last_name, country: payment.country || base.country };
+    const sourceUrl = `${site}/gracias`;
+    await Promise.all([
+      sendMetaEvent({ name: "Purchase", id: eventId, sourceUrl, person, customData: { value: PRICE_USD, currency: CURRENCY, content_name: PRODUCT_NAME, content_type: "product", order_id: payment.order_id } }),
+      sendTikTokEvent({ name: "CompletePayment", id: eventId, sourceUrl, person, value: PRICE_USD, currency: CURRENCY, contentName: PRODUCT_NAME }),
+    ]);
   }
 
   const access = process.env.PRODUCT_ACCESS_URL;
@@ -43,6 +44,7 @@ export default async function Gracias({ searchParams }: { searchParams: Promise<
         <img src="/brand/metodo-atomico-logo.png" alt="Método Atómico" width={190} height={50} style={{ height: 50, width: "auto" }} />
         {paid ? (
           <>
+            <span style={{ fontSize: 56, color: "#2FD39B", lineHeight: 0 }}><Icon name="circle-check" /></span>
             <h1 style={{ margin: 0, fontFamily: "'Bricolage Grotesque', sans-serif", fontSize: 36, lineHeight: 1.05 }}>¡Listo! Ya es tuyo.</h1>
             <p style={{ margin: 0, color: "#D2C9EE" }}>Tu pago se confirmó. Te mandamos el acceso a <strong style={{ color: "#F7F4FF" }}>{payment.payer?.email || "tu correo"}</strong>. Si no lo ves en unos minutos, revisa la carpeta de spam.</p>
             {access && <a href={access} style={{ background: "#119564", color: "#fff", textDecoration: "none", padding: "16px 26px", borderRadius: 14, fontWeight: 800, fontSize: 18 }}>Descargar Método Atómico</a>}

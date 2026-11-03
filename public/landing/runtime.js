@@ -134,9 +134,9 @@ var CONFIG = {
     if (a === 'shareLink') {
       e.preventDefault();
       var url = location.origin + '/', btn = el;
-      var done = function (t) { btn.textContent = t; };
+      var done = function (t) { btn.innerHTML = t; };
       if (navigator.share) { navigator.share({ title: 'Método Atómico', text: 'Para verlo en la compu: Método Atómico, tu IA hace tus videos', url: url }).catch(function () {}); return; }
-      if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { done('✅ Link copiado. Pégalo donde quieras guardarlo'); }, function () { done('Copia este link: ' + url); }); return; }
+      if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { done('<svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m16 9l-5.5 5.5L8 12"/></g></svg> Link copiado. Pégalo donde quieras guardarlo'); }, function () { done('Copia este link: ' + url); }); return; }
       done('Copia este link: ' + url); return;
     }
     if (a === 'replay') return openIntro(true);

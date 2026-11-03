@@ -138,7 +138,7 @@ var CONFIG = {
     if (a === 'stop') { e.stopPropagation(); return; }
     if (a === 'goPrecio') return goPrecio(e);
     if (a === 'close') { e.preventDefault(); return closeIntro(); }
-    if (a === 'buyFromVideo') { e.preventDefault(); closeIntro(); window.scrollTo(0, 0); return; }
+    if (a === 'buyFromVideo') { e.preventDefault(); closeIntro(); window.dispatchEvent(new CustomEvent('ma:checkout')); return; }
     if (a === 'unmute') { if (unlock) unlock(); return; }
     if (a === 'tapPlay') { e.preventDefault(); return tapPlay(); }
     if (a === 'speed') { e.preventDefault(); return toggleSpeed(); }

@@ -54,6 +54,12 @@ body:has(.ma-page),body:has(.ac-page){background:#120A2A}
 .ma-file-ic{grid-area:ic;width:44px;height:44px;border-radius:12px;background:#2A1C55;display:flex;align-items:center;justify-content:center;color:#2FD39B;font-size:22px}
 .ma-file-txt{grid-area:txt;display:flex;flex-direction:column;gap:2px;min-width:0}
 .ma-file-txt strong{text-transform:capitalize;font-size:16px}
+.ma-file-txt strong{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.ma-tag{font:600 11px 'JetBrains Mono',monospace;font-style:normal;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:99px}
+.ma-tag-main{background:#119564;color:#fff}
+.ma-tag-req{background:rgba(47,211,155,.16);color:#2FD39B}
+.ma-tag-opt{border:1px solid #4A3B82;color:#AEA3D3}
+.ma-file-note{color:#D2C9EE;font-size:14px;line-height:1.45}
 .ma-file-txt small{color:#9A8FC4;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ma-dl{grid-area:dl;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:12px;background:#119564;color:#fff;text-decoration:none;font-weight:800;font-size:16px}
 .ma-empty{display:flex;gap:10px;align-items:flex-start;padding:16px;border:1px dashed #4A3B82;border-radius:16px;color:#D2C9EE;font-size:15px;line-height:1.5}

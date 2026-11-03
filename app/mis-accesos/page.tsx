@@ -13,12 +13,33 @@ const fileIcon = (name: string): IconName =>
   /\.(zip|rar|7z)$/i.test(name) ? "package" : /\.(mp4|mov|webm)$/i.test(name) ? "file-video" : /\.(png|jpe?g|webp|gif)$/i.test(name) ? "image" : "file-text";
 const label = (name: string) => name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ");
 
+// Los archivos se entregan tal cual (el sistema busca los ejemplos por su nombre): aquí solo se ordenan y se explican.
+const BOVEDA: Record<string, string> = {
+  "plan-semana-1": "Tu plan de la semana 1",
+  "elige-tu-camino": "Qué vender con tus videos",
+  "primeros-clientes": "Tus primeros clientes",
+  "socios-atom": "Socios",
+  "proximos-30-dias": "Tus próximos 30 días",
+};
+type FileInfo = { order: number; title: string; tag?: string; note?: string };
+function fileInfo(name: string): FileInfo {
+  if (/v2\.zip$/i.test(name)) return { order: 0, title: "Sistema 2.0", tag: "Empieza aquí", note: "Descomprímelo en una carpeta nueva: es la carpeta que abres en tu IA." };
+  const ej = name.match(/Ejemplo (.+)\.zip$/i);
+  if (ej) return { order: 1, title: `Ejemplo: ${ej[1]}`, tag: "Obligatorio", note: "Ponlo dentro de la carpeta tal cual: sin descomprimirlo ni cambiarle el nombre." };
+  const bv = name.match(/Boveda (\d+) - (.+)\.pdf$/i);
+  if (bv) return { order: 10 + Number(bv[1]), title: `Bóveda ${bv[1]}: ${BOVEDA[bv[2]] ?? label(bv[2])}`, tag: "Bonus" };
+  if (/ELITE\.zip$/i.test(name)) return { order: 50, title: "Sistema 1 (versión anterior)", tag: "Opcional", note: "Para empezar usa el Sistema 2.0. Este es solo si ya tenías la versión 1." };
+  return { order: 40, title: label(name) };
+}
+
 const STEPS: { icon: IconName; title: string; text: string }[] = [
-  { icon: "monitor", title: "Ten listo tu equipo", text: "Una computadora Mac o Windows, la app de escritorio de Claude (Pro o superior) o de ChatGPT (Plus o superior) y tu clave de ElevenLabs para la voz." },
-  { icon: "download", title: "Descarga la carpeta", text: "Descarga el ZIP de Método Atómico desde aquí abajo y descomprímelo donde lo encuentres fácil, por ejemplo en Documentos." },
-  { icon: "folder", title: "Ábrela en tu IA", text: "En la app de escritorio, abre la carpeta de Método Atómico como proyecto y escribe «configúrame». Tu IA instala sola lo que haga falta." },
-  { icon: "sparkles", title: "Haz tu primer video", text: "Escribe un tema en una frase. Tu IA investiga, escribe el guion, dibuja, pone la voz y los subtítulos. Tú apruebas el guion." },
-  { icon: "play", title: "Súbelo y repite", text: "Publica el video en Instagram, TikTok y YouTube Shorts. Un video por día es lo que hace crecer la cuenta." },
+  { icon: "monitor", title: "Ten listo tu equipo", text: "Una computadora Mac o Windows con la app de escritorio de Claude (pestaña Code) o de ChatGPT (Codex). En la web no funciona. Y una cuenta de ElevenLabs para la voz." },
+  { icon: "download", title: "Descarga 3 archivos", text: "El Sistema 2.0 y los 2 ejemplos (estrella verde y alcohol). Los ejemplos son obligatorios: el sistema los usa como referencia de calidad en cada video." },
+  { icon: "folder", title: "Arma la carpeta", text: "Descomprime el Sistema 2.0 en una carpeta nueva y mete dentro los 2 ZIP de ejemplos tal cual, sin descomprimirlos ni cambiarles el nombre." },
+  { icon: "zap", title: "Ábrela en tu IA y escribe «configúrame»", text: "Claude: Code › Select folder › elige la carpeta. ChatGPT: Codex › + junto a Projects › Local › elige la carpeta (si pregunta si confías en ella, di que sí). Acepta cuando pida instalar programas; la primera vez tarda unos minutos." },
+  { icon: "lock", title: "Pega tu clave de ElevenLabs", text: "Abre PEGA-AQUI-TU-CLAVE-ELEVENLABS.txt y pega tu clave después de CLAVE= (empieza con sk_). Se saca en elevenlabs.io › Developers › API Keys › Create Key, con «Restrict Key» apagado. Nunca la pegues en el chat." },
+  { icon: "sparkles", title: "Haz tu primer video", text: "Escribe «Hazme un video sobre …». Te muestra 2 inicios y el guion: elige uno o escribe «adelante». Puede tardar hasta 1 hora, deja la compu encendida. El video, la portada y las descripciones quedan en la carpeta salida." },
+  { icon: "play", title: "Súbelo y repite", text: "Publica el video en Instagram, TikTok y YouTube Shorts. Un video por día durante 30 días es lo que hace crecer la cuenta." },
 ];
 
 export default async function MisAccesos() {
@@ -29,6 +50,7 @@ export default async function MisAccesos() {
     findCustomer(session.email).catch(() => null),
     listDownloads().catch((err) => { console.error("mis-accesos: archivos", err); return [] as DownloadFile[]; }),
   ]);
+  const list = files.map((f) => ({ ...f, info: fileInfo(f.name) })).sort((a, b) => a.info.order - b.info.order || a.name.localeCompare(b.name));
   if (!order) redirect("/api/acceso/salir");
 
   const minutes = Math.max(1, Math.round((session.exp - Date.now()) / 60000));
@@ -53,12 +75,16 @@ export default async function MisAccesos() {
 
       <section className="ma-block">
         <h2>Tus descargas</h2>
-        {files.length ? (
+        {list.length ? (
           <ul className="ma-files">
-            {files.map((f) => (
+            {list.map((f) => (
               <li key={f.name} className="ma-file">
                 <span className="ma-file-ic"><Icon name={fileIcon(f.name)} /></span>
-                <span className="ma-file-txt"><strong>{label(f.name)}</strong><small>{f.name}{f.size ? ` · ${size(f.size)}` : ""}</small></span>
+                <span className="ma-file-txt">
+                  <strong>{f.info.title}{f.info.tag && <em className={`ma-tag ma-tag-${f.info.order === 0 ? "main" : f.info.tag === "Obligatorio" ? "req" : "opt"}`}>{f.info.tag}</em>}</strong>
+                  {f.info.note && <span className="ma-file-note">{f.info.note}</span>}
+                  <small>{f.name}{f.size ? ` · ${size(f.size)}` : ""}</small>
+                </span>
                 <a className="ma-dl" href={`/api/descarga?f=${encodeURIComponent(f.name)}`}><Icon name="download" /> Descargar</a>
               </li>
             ))}
@@ -84,7 +110,7 @@ export default async function MisAccesos() {
       <section className="ma-help">
         <div>
           <strong>¿Te trabaste?</strong>
-          <span>Escríbenos y te ayudamos hasta que salga tu primer video.</span>
+          <span>Primero escribe «doctor» en tu IA: revisa tu compu y arregla lo que falte. Si sigue, escríbenos y te ayudamos hasta que salga tu primer video.</span>
         </div>
         <a href="https://ig.me/m/metodoatomico_" target="_blank" rel="noopener" className="ma-help-btn"><Icon name="instagram" /> Escribir por Instagram</a>
       </section>

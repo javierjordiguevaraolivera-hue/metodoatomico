@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { externalDownloads } from "@/lib/buyer";
 import { currentSession } from "@/lib/session";
 import { findPaidOrder, listDownloads, signedDownloadUrl } from "@/lib/supabase";
 
@@ -11,6 +12,9 @@ export async function GET(req: Request) {
   const name = new URL(req.url).searchParams.get("f") ?? "";
   try {
     if (!(await findPaidOrder(session.email))) return NextResponse.redirect(new URL("/acceso", req.url), 303);
+    // Archivo alojado fuera de Supabase (muy grande para el plan gratis): se redirige a su link.
+    const external = externalDownloads()[name];
+    if (external) return NextResponse.redirect(external, 303);
     // Solo se puede pedir un archivo que esté en la lista (nada de rutas inventadas).
     const files = await listDownloads();
     if (!files.some((f) => f.name === name)) return NextResponse.json({ error: "Archivo no encontrado" }, { status: 404 });

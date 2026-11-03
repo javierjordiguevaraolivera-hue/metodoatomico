@@ -35,10 +35,19 @@ create table if not exists public.access_logins (
 );
 create index if not exists access_logins_email_idx on public.access_logins (email, created_at desc);
 
+-- Avance del curso en /mis-accesos: una fila por clase que la persona marcó como completada.
+create table if not exists public.lesson_progress (
+  email         text not null,
+  lesson        text not null,                      -- ruta de la clase, ej. "1-2"
+  completed_at  timestamptz not null default now(),
+  primary key (email, lesson)
+);
+
 alter table public.customers     enable row level security;
 alter table public.orders        enable row level security;
 alter table public.access_logins enable row level security;
-revoke all on public.customers, public.orders, public.access_logins from anon, authenticated;
+alter table public.lesson_progress enable row level security;
+revoke all on public.customers, public.orders, public.access_logins, public.lesson_progress from anon, authenticated;
 
 -- Archivos descargables: bucket privado (los links de descarga se firman y vencen en minutos).
 insert into storage.buckets (id, name, public)

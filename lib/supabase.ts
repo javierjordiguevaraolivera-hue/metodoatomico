@@ -130,3 +130,22 @@ export async function signedDownloadUrl(name: string) {
   );
   return `${url}/storage/v1${signedURL}&download=${encodeURIComponent(name)}`;
 }
+
+// ---------- Avance del curso (clases completadas por correo) ----------
+export async function listProgress(email: string) {
+  const rows = await rest<{ lesson: string }[]>(`lesson_progress?email=eq.${encodeURIComponent(normalizeEmail(email))}&select=lesson`);
+  return rows.map((r) => r.lesson);
+}
+
+export async function setProgress(email: string, lesson: string, done: boolean) {
+  const e = normalizeEmail(email);
+  if (done) {
+    await rest("lesson_progress?on_conflict=email,lesson", {
+      method: "POST",
+      prefer: "resolution=ignore-duplicates,return=minimal",
+      body: JSON.stringify({ email: e, lesson }),
+    });
+  } else {
+    await rest(`lesson_progress?email=eq.${encodeURIComponent(e)}&lesson=eq.${encodeURIComponent(lesson)}`, { method: "DELETE", prefer: "return=minimal" });
+  }
+}

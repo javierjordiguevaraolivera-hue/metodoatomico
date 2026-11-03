@@ -64,20 +64,63 @@ body:has(.ma-page),body:has(.ac-page){background:#120A2A}
 .ma-dl{grid-area:dl;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:12px;background:#119564;color:#fff;text-decoration:none;font-weight:800;font-size:16px}
 .ma-empty{display:flex;gap:10px;align-items:flex-start;padding:16px;border:1px dashed #4A3B82;border-radius:16px;color:#D2C9EE;font-size:15px;line-height:1.5}
 .ma-empty .ic-wrap{color:#2FD39B;font-size:20px;margin-top:2px}
-.ma-mods-nav{display:flex;gap:8px;overflow-x:auto;margin:0 0 22px;padding-bottom:4px;scrollbar-width:none}
-.ma-mods-nav a{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid #35276A;border-radius:999px;background:#160E33;color:#D2C9EE;text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap}
-.ma-mods-nav a span{font:600 12px 'JetBrains Mono',monospace;color:#2FD39B}
-.ma-mod{scroll-margin-top:16px}
-.ma-mod h2{display:flex;align-items:center;gap:12px}
-.ma-mod h2 small{display:block;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#9A8FC4;margin-bottom:2px}
+/* Curso: panel con avance, tarjetas de módulo y página por clase */
+.ma-hero-txt{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ma-hero-prog{display:grid;gap:6px;margin:4px 0 6px;font-size:14px;color:#D2C9EE;max-width:420px}
+.ma-prog{display:flex;align-items:center;gap:10px}
+.ma-prog-bar{flex:1;height:8px;border-radius:99px;background:#2A1C55;overflow:hidden}
+.ma-prog-bar span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#119564,#2FD39B);transition:width .4s ease}
+.ma-prog-txt{flex:none;font:600 12px 'JetBrains Mono',monospace;color:#9A8FC4}
+.ma-continue{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:420px;min-height:56px;padding:10px 18px;margin:4px 0 8px;border-radius:14px;background:#119564;color:#fff;text-decoration:none;font-weight:800;font-size:16px;box-shadow:0 8px 24px -10px rgba(17,149,100,.8)}
+.ma-continue small{display:block;font-weight:600;font-size:12px;opacity:.85}
+.ma-continue span:last-child{font-size:22px}
+.ma-modgrid{display:grid;gap:14px}
+.ma-modcard{padding:16px;border:1px solid #35276A;border-radius:20px;background:#1D1240;display:grid;gap:12px}
+.ma-modcard.is-done{border-color:rgba(47,211,155,.45)}
+.ma-modcard header,.ma-side-head{display:flex;align-items:center;gap:12px}
+.ma-modcard header strong,.ma-side-head strong{display:block;font-family:'Bricolage Grotesque',sans-serif;font-size:19px;line-height:1.2}
+.ma-modcard header small,.ma-side-head small,.ma-crumb{display:block;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#9A8FC4;margin-bottom:2px}
+.ma-modcheck{margin-left:auto;color:#2FD39B;font-size:22px}
 .ma-mod-ic{flex:none;width:40px;height:40px;border-radius:12px;background:rgba(47,211,155,.14);color:#2FD39B;display:flex;align-items:center;justify-content:center;font-size:20px}
-.ma-lessons{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-.ma-lesson{padding:16px;border:1px solid #2E2260;border-radius:18px;background:#160E33;display:grid;gap:12px;min-width:0}
-.ma-lesson h3{margin:0;display:flex;gap:10px;align-items:baseline;font-size:17px;line-height:1.3}
-.ma-lesson h3 span{flex:none;font:600 13px 'JetBrains Mono',monospace;color:#9A8FC4}
-.ma-points{margin:0;padding-left:20px;display:grid;gap:6px;color:#D2C9EE;font-size:14.5px;line-height:1.5}
-.ma-cmds{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px;color:#9A8FC4}
-.ma-cmds code{font:500 13px 'JetBrains Mono',monospace;background:#2A1C55;color:#F7F4FF;padding:4px 9px;border-radius:8px;overflow-wrap:anywhere}
+.ma-lessonlist{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.ma-lessonlist a{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 10px;border-radius:12px;color:#D2C9EE;text-decoration:none;font-size:15px;line-height:1.3}
+.ma-lessonlist a:hover,.ma-lessonlist a:focus-visible{background:#2A1C55;outline:none}
+.ma-lessonlist a[aria-current=page]{background:#2A1C55;color:#F7F4FF;font-weight:700}
+.ma-lessonlist a.is-next{background:rgba(17,149,100,.14);color:#F7F4FF}
+.ma-check{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid #4A3B82;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#120A2A}
+.is-done .ma-check{background:#2FD39B;border-color:#2FD39B}
+.ma-ln{flex:none;font:600 12px 'JetBrains Mono',monospace;color:#9A8FC4}
+.ma-lt{flex:1;min-width:0}
+.is-done .ma-lt{color:#AEA3D3}
+.ma-lf{flex:none;color:#9A8FC4;font-size:15px}
+.ma-back{display:inline-flex;align-items:center;min-height:40px;color:#D2C9EE;text-decoration:none;font-weight:700;font-size:15px}
+.ma-lessonlayout{display:grid;gap:18px;margin:6px 0 26px}
+.ma-side{order:2;padding:16px;border:1px solid #2E2260;border-radius:20px;background:#160E33;display:grid;gap:12px;align-self:start}
+.ma-lessonmain{min-width:0;display:grid;gap:18px;padding:20px 18px;border:1px solid #35276A;border-radius:22px;background:#1D1240}
+.ma-ltitle{margin:-10px 0 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:27px;line-height:1.12}
+.ma-ltitle > span{font:600 15px 'JetBrains Mono',monospace;color:#2FD39B}
+.ma-ltitle .ma-tag{align-self:center}
+.ma-points{margin:0;padding-left:20px;display:grid;gap:8px;color:#D2C9EE;font-size:14.5px;line-height:1.5}
+.ma-points-lg{font-size:16px;line-height:1.6;gap:10px}
+.ma-points-lg li::marker{color:#2FD39B}
+.ma-cmdbox{display:grid;gap:10px;padding:14px;border-radius:16px;background:#160E33;border:1px solid #2E2260}
+.ma-cmdbox strong{font-size:14px;color:#9A8FC4;font-weight:600}
+.ma-cmds{display:flex;flex-wrap:wrap;gap:8px}
+.ma-cmds code{font:500 13.5px 'JetBrains Mono',monospace;background:#2A1C55;color:#F7F4FF;padding:6px 10px;border-radius:8px;overflow-wrap:anywhere}
+.ma-lfiles{display:grid;gap:10px}
+.ma-lfiles h2{margin:0;font-family:'Bricolage Grotesque',sans-serif;font-size:19px}
+.ma-done-wrap{display:grid;gap:6px}
+.ma-done{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:54px;padding:0 18px;border-radius:14px;border:2px solid #2FD39B;background:transparent;color:#F7F4FF;font:800 16px Inter,system-ui,sans-serif;cursor:pointer}
+.ma-done:hover{background:rgba(47,211,155,.1)}
+.ma-done.is-done{background:rgba(47,211,155,.16);color:#2FD39B}
+.ma-done:disabled{cursor:progress}
+.ma-done-box{width:22px;height:22px;border-radius:6px;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:13px}
+.is-done .ma-done-box{background:#2FD39B;border-color:#2FD39B;color:#120A2A}
+.ma-done-err{color:#FF8A8A;font-size:14px}
+.ma-pager{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ma-pager a{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid #35276A;border-radius:14px;color:#F7F4FF;text-decoration:none;font-size:14px;font-weight:700;line-height:1.3;min-width:0}
+.ma-pager a small{font-weight:600;color:#9A8FC4;font-size:12px}
+.ma-pager a.is-next{text-align:right;grid-column:2}
 .ma-file-soon{opacity:.75}
 .ma-dl-soon{background:#2A1C55;color:#AEA3D3;font-weight:700}
 .ma-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
@@ -100,5 +143,12 @@ body:has(.ma-page),body:has(.ac-page){background:#120A2A}
   .ma-file{grid-template-columns:48px minmax(0,1fr) auto;grid-template-areas:"ic txt dl";padding:16px 18px}
   .ma-dl{padding:0 20px}
   .ma-help{flex-direction:row;align-items:center;justify-content:space-between}
+  .ma-modgrid{grid-template-columns:1fr 1fr}
+  .ma-lessonlayout{grid-template-columns:260px minmax(0,1fr);align-items:start}
+  .ma-side{order:0;position:sticky;top:16px}
+  .ma-lessonmain{padding:28px 30px}
+  .ma-ltitle{font-size:34px}
+  .ma-done{width:auto;justify-self:start}
   .ma-help-btn{padding:0 20px}
 }
+.ma-page.ma-page-lesson{max-width:1080px}

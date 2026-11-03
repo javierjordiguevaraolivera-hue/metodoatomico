@@ -53,8 +53,9 @@ type FieldType = "pan" | "expiration" | "cvv";
 const PLACEHOLDERS: Record<FieldType, string> = { pan: "1234 1234 1234 1234", expiration: "MM / AA", cvv: "CVV" };
 const NOT_READY: Record<FieldType, boolean> = { pan: false, expiration: false, cvv: false };
 
+// Fuente del sistema: el iframe de dLocal no carga Inter, y así nuestro placeholder calza letra por letra con el suyo.
 const cardStyle = {
-  base: { fontSize: "16px", lineHeight: "24px", fontFamily: "Inter, system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#8E82BF" }, iconColor: "#AEA3D3" },
+  base: { fontSize: "16px", lineHeight: "24px", fontFamily: "system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#8E82BF" }, iconColor: "#AEA3D3" },
   invalid: { color: "#FF6B8B", iconColor: "#FF6B8B" },
   focus: { color: "#FFFFFF" },
 };
@@ -147,7 +148,8 @@ export default function Checkout() {
           box.innerHTML = "";
           const slot = document.createElement("div");
           box.appendChild(slot);
-          const field = fields.create(type, { style: cardStyle, placeholder: PLACEHOLDERS[type] });
+          // Sin el ícono de tarjeta de dLocal: aparecía recién al cargar y movía el texto (las marcas ya se ven arriba).
+          const field = fields.create(type, { style: cardStyle, placeholder: PLACEHOLDERS[type], hideIcon: true });
           const ready = () => { if (!stale()) setFieldReady((r) => ({ ...r, [type]: true })); };
           if (field.on) { field.on("ready", ready); setTimeout(ready, 6000); } else ready();
           field.mount(slot);

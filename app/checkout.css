@@ -51,7 +51,7 @@
 .ck-cardbox{border:1px solid #4A3B82;border-radius:12px;background:#0B0620;overflow:hidden;transition:border-color .15s,box-shadow .15s}
 .ck-cardbox:focus-within{border-color:#2FD39B;box-shadow:0 0 0 3px rgba(47,211,155,.18)}
 .ck-card{position:relative;min-height:46px;padding:11px 14px;box-sizing:border-box;display:flex;align-items:center}
-.ck-ph{position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%);color:#8E82BF;font:400 16px/24px Inter,system-ui,sans-serif;pointer-events:none;white-space:nowrap;overflow:hidden}
+.ck-ph{position:absolute;left:14px;right:14px;top:50%;transform:translateY(-50%);color:#8E82BF;font:400 16px/24px system-ui,sans-serif;pointer-events:none;white-space:nowrap;overflow:hidden}
 .ck-card > div{width:100%}
 .ck-card-row{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #2E2260}
 .ck-card-cvv{border-left:1px solid #2E2260}

@@ -37,7 +37,7 @@ function loadSdk() {
 }
 
 const cardStyle = {
-  base: { fontSize: "16px", lineHeight: "24px", fontFamily: "Inter, system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#6F649F", fontStyle: "italic" }, iconColor: "#AEA3D3" },
+  base: { fontSize: "16px", lineHeight: "24px", fontFamily: "Inter, system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#8E82BF" }, iconColor: "#AEA3D3" },
   invalid: { color: "#FF6B8B", iconColor: "#FF6B8B" },
   focus: { color: "#FFFFFF" },
 };
@@ -121,9 +121,9 @@ export default function Checkout() {
           field.mount(slot);
           return field;
         };
-        card.current = mount(panBox.current, "pan", "1234 5678 9012 3456");
-        mount(expBox.current, "expiration", "MM/AA (12/29)");
-        mount(cvvBox.current, "cvv", "CVV (123)");
+        card.current = mount(panBox.current, "pan", "1234 1234 1234 1234");
+        mount(expBox.current, "expiration", "MM / AA");
+        mount(cvvBox.current, "cvv", "CVV");
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
         sdk.onCardBinChange?.((bin) => setBrand(bin?.brand ?? ""));
         setCardReady(true);

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { CURRENCY, DLOCALGO_SDK_URL, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
+import { CURRENCY, DLOCALGO_LIVE, DLOCALGO_SDK_URL, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
 import { COUNTRIES, DEFAULT_COUNTRY, docExample } from "@/lib/countries";
 import { track } from "@/lib/track-client";
 import Icon from "./Icon";
@@ -11,7 +11,7 @@ import Icon from "./Icon";
 
 const SMARTFIELDS_KEY = process.env.NEXT_PUBLIC_DLOCALGO_SMARTFIELDS_KEY || "";
 
-type CardField = { mount: (el: HTMLElement) => void; destroy?: () => void; unmount?: () => void };
+type CardField = { mount: (el: HTMLElement) => void; on?: (event: string, cb: () => void) => void; destroy?: () => void; unmount?: () => void };
 type Installment = { id: string; installments: number; installment_amount: number; total_amount: number; currency: string };
 type DlocalGo = {
   initialize: (key: string, token: string) => Promise<void> | void;
@@ -36,6 +36,23 @@ function loadSdk() {
   return sdkPromise;
 }
 
+// Lo que tarda el campo de tarjeta es bajar el SDK (~600 KB) y abrir los iframes de dLocal.
+// Se adelanta en cuanto la landing queda quieta, para que al abrir el checkout ya esté listo.
+function warmUp() {
+  const api = DLOCALGO_LIVE ? "https://api.dlocalgo.com" : "https://api-sbx.dlocalgo.com";
+  for (const href of [new URL(DLOCALGO_SDK_URL).origin, api, "https://static.dlocal.com"]) {
+    if (document.querySelector(`link[rel="preconnect"][href="${href}"]`)) continue;
+    const l = document.createElement("link");
+    l.rel = "preconnect"; l.href = href; l.crossOrigin = "";
+    document.head.appendChild(l);
+  }
+  loadSdk().catch(() => {});
+}
+
+type FieldType = "pan" | "expiration" | "cvv";
+const PLACEHOLDERS: Record<FieldType, string> = { pan: "1234 1234 1234 1234", expiration: "MM / AA", cvv: "CVV" };
+const NOT_READY: Record<FieldType, boolean> = { pan: false, expiration: false, cvv: false };
+
 const cardStyle = {
   base: { fontSize: "16px", lineHeight: "24px", fontFamily: "Inter, system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#8E82BF" }, iconColor: "#AEA3D3" },
   invalid: { color: "#FF6B8B", iconColor: "#FF6B8B" },
@@ -55,6 +72,8 @@ export default function Checkout() {
   const [installments, setInstallments] = useState<Installment[]>([]);
   // Marca que detecta dLocal con los primeros 6 dígitos: VI (Visa), MC (Mastercard), AM (Amex)…
   const [brand, setBrand] = useState("");
+  // Mientras el iframe de dLocal no termina de cargar se ve un placeholder nuestro, igual al de dLocal.
+  const [fieldReady, setFieldReady] = useState(NOT_READY);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", documentType: "", document: "", installmentsId: "" });
   // Tarjeta como Stripe: número en una fila; vencimiento y CVV debajo, cada uno en su campo seguro de dLocal.
   const panBox = useRef<HTMLDivElement>(null);
@@ -63,6 +82,14 @@ export default function Checkout() {
   const card = useRef<CardField | null>(null);
   const requested = useRef("");
   const attempt = useRef(0);
+
+  useEffect(() => {
+    if (!SMARTFIELDS_KEY) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: object) => number };
+    if (w.requestIdleCallback) { w.requestIdleCallback(warmUp, { timeout: 4000 }); return; }
+    const t = setTimeout(warmUp, 2500);
+    return () => clearTimeout(t);
+  }, []);
 
   // Los botones "Comprar" de la página disparan este evento (public/landing/runtime.js).
   useEffect(() => {
@@ -95,7 +122,10 @@ export default function Checkout() {
     const id = ++attempt.current;
     const stale = () => id !== attempt.current;
     (async () => {
-      setLoading(true); setError(""); setCardReady(false); setInstallments([]);
+      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFieldReady(NOT_READY);
+      // El SDK baja al mismo tiempo que se crea el pago (antes iba uno detrás del otro).
+      const sdkLoad = SMARTFIELDS_KEY ? loadSdk() : null;
+      sdkLoad?.catch(() => {});
       try {
         const res = await fetch("/api/checkout/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(country ? { country } : {}) });
         const data = await res.json();
@@ -107,23 +137,25 @@ export default function Checkout() {
         setForm((f) => ({ ...f, documentType: docs.includes(f.documentType) ? f.documentType : docs[0] ?? "", installmentsId: "" }));
 
         if (!SMARTFIELDS_KEY || !data.checkoutToken) return;
-        await loadSdk();
+        await sdkLoad;
         const sdk = window.dlocalGo!;
         await sdk.initialize(SMARTFIELDS_KEY, data.checkoutToken);
         if (stale() || !panBox.current || !expBox.current || !cvvBox.current) return;
         // Contenedores nuevos en cada intento: si se vuelve a montar en el mismo (al cambiar de país), dLocal deja el campo vacío.
         const fields = sdk.fields();
-        const mount = (box: HTMLDivElement, type: "pan" | "expiration" | "cvv", placeholder: string) => {
+        const mount = (box: HTMLDivElement, type: FieldType) => {
           box.innerHTML = "";
           const slot = document.createElement("div");
           box.appendChild(slot);
-          const field = fields.create(type, { style: cardStyle, placeholder });
+          const field = fields.create(type, { style: cardStyle, placeholder: PLACEHOLDERS[type] });
+          const ready = () => { if (!stale()) setFieldReady((r) => ({ ...r, [type]: true })); };
+          if (field.on) { field.on("ready", ready); setTimeout(ready, 6000); } else ready();
           field.mount(slot);
           return field;
         };
-        card.current = mount(panBox.current, "pan", "1234 1234 1234 1234");
-        mount(expBox.current, "expiration", "MM / AA");
-        mount(cvvBox.current, "cvv", "CVV");
+        card.current = mount(panBox.current, "pan");
+        mount(expBox.current, "expiration");
+        mount(cvvBox.current, "cvv");
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
         sdk.onCardBinChange?.((bin) => setBrand(bin?.brand ?? ""));
         setCardReady(true);
@@ -216,10 +248,10 @@ export default function Checkout() {
                   <span className={brand === "AM" ? "on" : ""}><Icon name="amex" logo /></span>
                 </span></span>
                 <div className="ck-cardbox">
-                  <div className="ck-card ck-card-pan" ref={panBox} />
+                  <div className="ck-card ck-card-pan"><div ref={panBox} />{!fieldReady.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}</div>
                   <div className="ck-card-row">
-                    <div className="ck-card ck-card-exp" ref={expBox} />
-                    <div className="ck-card ck-card-cvv" ref={cvvBox} />
+                    <div className="ck-card ck-card-exp"><div ref={expBox} />{!fieldReady.expiration && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.expiration}</span>}</div>
+                    <div className="ck-card ck-card-cvv"><div ref={cvvBox} />{!fieldReady.cvv && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.cvv}</span>}</div>
                   </div>
                 </div>
                 {brand === "AM" && <div className="ck-hint">American Express: el CVV son 4 dígitos al frente de la tarjeta.</div>}

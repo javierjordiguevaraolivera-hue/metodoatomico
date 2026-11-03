@@ -15,7 +15,7 @@ type CardField = { mount: (el: HTMLElement) => void; destroy?: () => void; unmou
 type Installment = { id: string; installments: number; installment_amount: number; total_amount: number; currency: string };
 type DlocalGo = {
   initialize: (key: string, token: string) => Promise<void> | void;
-  fields: () => { create: (type: "card", opts: object) => CardField };
+  fields: () => { create: (type: "pan" | "expiration" | "cvv", opts: object) => CardField };
   createCardToken: (field: CardField, data: { name: string }) => Promise<{ token: string }>;
   onInstallmentsChange?: (cb: (list: Installment[] | null) => void) => void;
 };
@@ -36,7 +36,7 @@ function loadSdk() {
 }
 
 const cardStyle = {
-  base: { fontSize: "17px", lineHeight: "26px", fontFamily: "Inter, system-ui, sans-serif", color: "#F7F4FF", "::placeholder": { color: "#8E82BF" }, iconColor: "#AEA3D3" },
+  base: { fontSize: "16px", lineHeight: "24px", fontFamily: "Inter, system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#7D72AE" }, iconColor: "#AEA3D3" },
   invalid: { color: "#FF6B8B", iconColor: "#FF6B8B" },
   focus: { color: "#FFFFFF" },
 };
@@ -53,7 +53,10 @@ export default function Checkout() {
   const [error, setError] = useState("");
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", documentType: "", document: "", installmentsId: "" });
-  const cardBox = useRef<HTMLDivElement>(null);
+  // Tarjeta como Stripe: número en una fila; vencimiento y CVV debajo, cada uno en su campo seguro de dLocal.
+  const panBox = useRef<HTMLDivElement>(null);
+  const expBox = useRef<HTMLDivElement>(null);
+  const cvvBox = useRef<HTMLDivElement>(null);
   const card = useRef<CardField | null>(null);
   const requested = useRef("");
   const attempt = useRef(0);
@@ -104,13 +107,20 @@ export default function Checkout() {
         await loadSdk();
         const sdk = window.dlocalGo!;
         await sdk.initialize(SMARTFIELDS_KEY, data.checkoutToken);
-        if (stale() || !cardBox.current) return;
-        // Contenedor nuevo en cada intento: si se vuelve a montar en el mismo (al cambiar de país), dLocal deja el campo vacío.
-        cardBox.current.innerHTML = "";
-        const slot = document.createElement("div");
-        cardBox.current.appendChild(slot);
-        card.current = sdk.fields().create("card", { style: cardStyle });
-        card.current.mount(slot);
+        if (stale() || !panBox.current || !expBox.current || !cvvBox.current) return;
+        // Contenedores nuevos en cada intento: si se vuelve a montar en el mismo (al cambiar de país), dLocal deja el campo vacío.
+        const fields = sdk.fields();
+        const mount = (box: HTMLDivElement, type: "pan" | "expiration" | "cvv", placeholder: string) => {
+          box.innerHTML = "";
+          const slot = document.createElement("div");
+          box.appendChild(slot);
+          const field = fields.create(type, { style: cardStyle, placeholder });
+          field.mount(slot);
+          return field;
+        };
+        card.current = mount(panBox.current, "pan", "1234 1234 1234 1234");
+        mount(expBox.current, "expiration", "MM/AA");
+        mount(cvvBox.current, "cvv", "CVV");
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
         setCardReady(true);
       } catch (err) {
@@ -195,7 +205,13 @@ export default function Checkout() {
               </div>
               <div className="ck-field">
                 <span className="ck-card-label">Tarjeta de crédito o débito <span className="ck-brands"><Icon name="visa" logo /><Icon name="mastercard" logo /><Icon name="amex" logo /></span></span>
-                <div className="ck-card" ref={cardBox} />
+                <div className="ck-cardbox">
+                  <div className="ck-card ck-card-pan" ref={panBox} />
+                  <div className="ck-card-row">
+                    <div className="ck-card ck-card-exp" ref={expBox} />
+                    <div className="ck-card ck-card-cvv" ref={cvvBox} />
+                  </div>
+                </div>
                 {loading && <div className="ck-note">Cargando el pago seguro…</div>}
               </div>
               {installments.length > 0 && (

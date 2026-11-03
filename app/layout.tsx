@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./landing.css";
 import "./checkout.css";
+import "./legal.css";
 
 const site = process.env.NEXT_PUBLIC_SITE_URL || "https://metodo-atomico.lat";
 

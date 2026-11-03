@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CURRENCY, DLOCALGO_SDK_URL, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
-import { COUNTRIES } from "@/lib/countries";
+import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries";
 import { track } from "@/lib/track-client";
 import Icon from "./Icon";
 
@@ -109,6 +109,7 @@ export default function Checkout() {
       } catch (err) {
         if (!cancelled) setError(err instanceof Error && err.message !== "error" && err.message !== "sdk" ? err.message : "No pudimos cargar el pago. Revisa tu conexión e intenta de nuevo.");
         requested.current = "";
+        setCountry((c) => c || DEFAULT_COUNTRY);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -153,7 +154,13 @@ export default function Checkout() {
           </div>
           <button type="button" className="ck-x" onClick={close} aria-label="Cerrar" disabled={paying}><Icon name="x" /></button>
         </div>
-        <div className="ck-price"><span>${PRICE_USD}</span> USD · pago único · acceso de por vida</div>
+        <div className="ck-sum">
+          <div className="ck-amount">${PRICE_USD}<small>USD</small></div>
+          <ul className="ck-tags">
+            <li><Icon name="circle-check" /> Pago único</li>
+            <li><Icon name="circle-check" /> Acceso de por vida</li>
+          </ul>
+        </div>
 
         <form onSubmit={pay} className="ck-form">
           <label className="ck-field">
@@ -209,7 +216,7 @@ export default function Checkout() {
             <a className="ck-alt" href={payment.redirectUrl}><Icon name="banknote" /> ¿Prefieres efectivo, transferencia u otro método de tu país? Paga aquí</a>
           )}
           <ul className="ck-trust">
-            <li><Icon name="shield" /> Garantía: pruébalo 7 días (<a href="#reembolsos" onClick={() => setOpen(false)}>ver condiciones</a>)</li>
+            <li><Icon name="shield" /> Garantía: pruébalo 7 días</li>
             <li><Icon name="zap" /> Acceso inmediato al correo</li>
             <li><Icon name="lock" /> Datos cifrados por dLocal Go</li>
           </ul>

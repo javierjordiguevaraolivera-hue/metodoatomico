@@ -286,3 +286,33 @@ x-if{display:contents}x-if[hidden]{display:none}html{scroll-behavior:smooth}/* �
   .buybar > div > div > span:last-child{display:none}
   .buybar a{padding:12px 14px !important}
 }
+
+/* Sección "Te acompañamos hasta tu primer reel" + bonus: oculta por ahora (sigue en el HTML) */
+.sec-acompanamos{display:none !important}
+
+/* Celular: la portada sin el botón verde (ya está la barra de compra) ni el teléfono con Atomín */
+@media (max-width:759px){
+  #top .hero-cta{display:none !important}
+  #top .hero-out .phone{display:none !important}
+  #top .hero-out{padding-top:0 !important}
+}
+
+/* Bloque de precio (sección "Qué incluye") */
+.price-strip{display:grid;grid-template-columns:1fr;gap:22px;background:#26174F;border:2px solid #2FD39B;border-radius:28px;padding:26px 22px}
+.ps-price{display:flex;flex-direction:column;gap:6px}
+.ps-label{font:500 12px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#2FD39B}
+.ps-amount{display:flex;align-items:center;gap:12px}
+.ps-big{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:clamp(64px,16vw,96px);line-height:.9;color:#F7F4FF}
+.ps-cur{font-size:14px;line-height:1.3;color:#AEA3D3;font-weight:600}
+.ps-cta{display:flex;flex-direction:column;gap:14px;min-width:0}
+@media (max-width:379px){.ps-btn{font-size:16px}}
+.ps-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:58px;padding:16px 18px;white-space:nowrap;border-radius:14px;background:#119564;color:#fff !important;text-decoration:none;font-weight:800;font-size:18px;box-sizing:border-box;box-shadow:0 14px 34px -12px rgba(17,149,100,.9)}
+.ps-trust{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;color:#D2C9EE}
+.ps-trust li{display:inline-flex;align-items:center;gap:6px}
+.ps-trust .ic{color:#2FD39B;font-size:16px}
+@media (min-width:760px){
+  .price-strip{grid-template-columns:auto minmax(0,420px);justify-content:space-between;align-items:center;padding:32px 36px}
+}
+/* Separación entre el carrito y el texto en botones que no tienen gap */
+a > svg.ic:first-child{margin-right:.4em}
+.ps-btn > svg.ic:first-child,.hero-cta > svg.ic:first-child{margin-right:0}

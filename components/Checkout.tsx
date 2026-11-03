@@ -11,7 +11,7 @@ import Icon from "./Icon";
 
 const SMARTFIELDS_KEY = process.env.NEXT_PUBLIC_DLOCALGO_SMARTFIELDS_KEY || "";
 
-type CardField = { mount: (el: HTMLElement) => void; on?: (event: string, cb: (e?: { empty?: boolean }) => void) => void; destroy?: () => void; unmount?: () => void };
+type CardField = { mount: (el: HTMLElement) => void; on?: (event: string, cb: (e?: { empty?: boolean; brand?: string }) => void) => void; destroy?: () => void; unmount?: () => void };
 type Installment = { id: string; installments: number; installment_amount: number; total_amount: number; currency: string };
 type DlocalGo = {
   initialize: (key: string, token: string) => Promise<void> | void;
@@ -122,6 +122,8 @@ export default function Checkout() {
   const panIcon = useRef<HTMLSpanElement>(null);
   // La copia del ícono se apaga al mismo ritmo en que aparece el campo de dLocal; después solo queda el de dLocal.
   const [panShown, setPanShown] = useState(false);
+  // Marca que dLocal ya dibuja dentro del campo (su logo de Visa es azul oscuro y no se ve sobre el fondo): le ponemos un fondo blanco detrás.
+  const [panBrand, setPanBrand] = useState("");
   const requested = useRef("");
   const attempt = useRef(0);
 
@@ -166,7 +168,7 @@ export default function Checkout() {
     const id = ++attempt.current;
     const stale = () => id !== attempt.current;
     (async () => {
-      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setPanShown(false);
+      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setPanShown(false); setPanBrand("");
       try {
         const data = await createPayment(country);
         if (stale()) return;
@@ -186,7 +188,8 @@ export default function Checkout() {
           box.appendChild(slot);
           // Placeholder " ": vacío, dLocal muestra su "Card number".
           const field = fields.create(type, { style: cardStyle, placeholder: " " });
-          field.on?.("empty", (e?: { empty?: boolean }) => { if (!stale()) setFilled((f) => ({ ...f, [type]: e?.empty === false })); });
+          field.on?.("empty", (e) => { if (!stale()) setFilled((f) => ({ ...f, [type]: e?.empty === false })); });
+          if (type === "pan") field.on?.("brand", (e) => { if (!stale()) setPanBrand(e?.brand ?? ""); });
           field.mount(slot);
           return field;
         };
@@ -225,7 +228,8 @@ export default function Checkout() {
 
   async function pay(e: FormEvent) {
     e.preventDefault();
-    if (!payment?.checkoutToken || !card.current || paying) return;
+    // El botón se ve activo desde el inicio (si cambiara al cargar se notaría); antes de que cargue la tarjeta no hace nada.
+    if (!cardReady || !payment?.checkoutToken || !card.current || paying) return;
     setPaying(true); setError("");
     try {
       const { token } = await window.dlocalGo!.createCardToken(card.current, { name: `${form.firstName} ${form.lastName}`.trim() });
@@ -302,6 +306,7 @@ export default function Checkout() {
                 </span></span>
                 <div className="ck-cardbox">
                   <div className="ck-card ck-card-pan">
+                    {filled.pan && panBrand && <span className="ck-pan-chip" aria-hidden="true" />}
                     {!panShown && !filled.pan && <span className="ck-pan-ic" ref={panIcon}><CardIcon /></span>}
                     <div ref={panBox} />{!filled.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}
                   </div>
@@ -326,7 +331,7 @@ export default function Checkout() {
           {error && <div className="ck-error" role="alert">{error}</div>}
 
           {withCard ? (
-            <button type="submit" className="ck-pay" disabled={!cardReady || paying}>{paying ? "Procesando…" : <><Icon name="lock" /> Pagar ${PRICE_USD} USD</>}</button>
+            <button type="submit" className="ck-pay" disabled={paying}>{paying ? "Procesando…" : <><Icon name="lock" /> Pagar ${PRICE_USD} USD</>}</button>
           ) : (
             <a className="ck-pay" href={payment?.redirectUrl || "#"} aria-disabled={!payment?.redirectUrl} onClick={(e) => { if (!payment?.redirectUrl) e.preventDefault(); }}>
               {loading ? "Preparando el pago…" : <><Icon name="lock" /> Continuar al pago seguro</>}

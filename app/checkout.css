@@ -59,6 +59,9 @@
 .ck-card-pan .ck-ph{left:42px}
 .ck-pan-ic{position:absolute;left:14px;top:50%;margin-top:-12px;height:24px;width:24px;pointer-events:none;will-change:opacity}
 .ck-pan-ic svg{position:absolute;left:0;top:3px;width:24px;height:auto;opacity:.7}
+/* Fondo blanco detrás del logo de marca que dibuja dLocal (va detrás del iframe: isolation + z-index -1) */
+.ck-card-pan{isolation:isolate}
+.ck-pan-chip{position:absolute;z-index:-1;left:13px;top:calc(50% - .8px);transform:translateY(-50%);width:26px;height:18px;border-radius:3px;background:#fff;pointer-events:none}
 .ck-card-row{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #2E2260}
 .ck-card-cvv{border-left:1px solid #2E2260}
 .ck-card:focus-within{background:#110A2C}

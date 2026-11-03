@@ -11,7 +11,7 @@ import Icon from "./Icon";
 
 const SMARTFIELDS_KEY = process.env.NEXT_PUBLIC_DLOCALGO_SMARTFIELDS_KEY || "";
 
-type CardField = { mount: (el: HTMLElement) => void; on?: (event: string, cb: () => void) => void; destroy?: () => void; unmount?: () => void };
+type CardField = { mount: (el: HTMLElement) => void; on?: (event: string, cb: (e?: { empty?: boolean }) => void) => void; destroy?: () => void; unmount?: () => void };
 type Installment = { id: string; installments: number; installment_amount: number; total_amount: number; currency: string };
 type DlocalGo = {
   initialize: (key: string, token: string) => Promise<void> | void;
@@ -51,9 +51,21 @@ function warmUp() {
 
 type FieldType = "pan" | "expiration" | "cvv";
 const PLACEHOLDERS: Record<FieldType, string> = { pan: "1234 1234 1234 1234", expiration: "MM / AA", cvv: "CVV" };
-const NOT_READY: Record<FieldType, boolean> = { pan: false, expiration: false, cvv: false };
+const NOT_FILLED: Record<FieldType, boolean> = { pan: false, expiration: false, cvv: false };
 
-// Fuente del sistema: el iframe de dLocal no carga Inter, y así nuestro placeholder calza letra por letra con el suyo.
+// Ícono de tarjeta vacía, el mismo dibujo que usa dLocal, pero fijo y nuestro (no aparece de golpe).
+function CardIcon() {
+  return (
+    <svg viewBox="0 0 32 21" aria-hidden="true">
+      <g fill="#AEA3D3" fillRule="evenodd">
+        <path opacity=".2" d="M26.58 21H2.42A2.4 2.4 0 0 1 0 18.62V4.38A2.4 2.4 0 0 1 2.42 2h24.16A2.4 2.4 0 0 1 29 4.38v14.25A2.4 2.4 0 0 1 26.58 21zM10 7.83c0-.46-.35-.83-.78-.83H3.78c-.43 0-.78.37-.78.83v3.34c0 .46.35.83.78.83h5.44c.43 0 .78-.37.78-.83V7.83z" />
+        <path opacity=".3" d="M25 17h-3c-.65 0-1-.3-1-1s.35-1 1-1h3c.65 0 1 .3 1 1s-.35 1-1 1zm-6 0h-3c-.65 0-1-.3-1-1s.35-1 1-1h3c.65 0 1 .3 1 1s-.35 1-1 1zm-6 0h-3c-.65 0-1-.3-1-1s.35-1 1-1h3c.65 0 1 .3 1 1s-.35 1-1 1zm-6 0H4c-.65 0-1-.3-1-1s.35-1 1-1h3c.65 0 1 .3 1 1s-.35 1-1 1z" />
+      </g>
+    </svg>
+  );
+}
+
+// Fuente del sistema: el iframe de dLocal no carga Inter.
 const cardStyle = {
   base: { fontSize: "16px", lineHeight: "24px", fontFamily: "system-ui, sans-serif", fontSmoothing: "antialiased", color: "#F7F4FF", "::placeholder": { color: "#8E82BF" }, iconColor: "#AEA3D3" },
   invalid: { color: "#FF6B8B", iconColor: "#FF6B8B" },
@@ -73,8 +85,9 @@ export default function Checkout() {
   const [installments, setInstallments] = useState<Installment[]>([]);
   // Marca que detecta dLocal con los primeros 6 dígitos: VI (Visa), MC (Mastercard), AM (Amex)…
   const [brand, setBrand] = useState("");
-  // Mientras el iframe de dLocal no termina de cargar se ve un placeholder nuestro, igual al de dLocal.
-  const [fieldReady, setFieldReady] = useState(NOT_READY);
+  // El ícono y los placeholders de la tarjeta los dibujamos nosotros, fijos desde que abre el checkout:
+  // dLocal solo pone lo que la persona escribe. El placeholder se esconde cuando dLocal avisa que el campo ya no está vacío.
+  const [filled, setFilled] = useState(NOT_FILLED);
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", documentType: "", document: "", installmentsId: "" });
   // Tarjeta como Stripe: número en una fila; vencimiento y CVV debajo, cada uno en su campo seguro de dLocal.
   const panBox = useRef<HTMLDivElement>(null);
@@ -123,7 +136,7 @@ export default function Checkout() {
     const id = ++attempt.current;
     const stale = () => id !== attempt.current;
     (async () => {
-      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFieldReady(NOT_READY);
+      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setBrand("");
       // El SDK baja al mismo tiempo que se crea el pago (antes iba uno detrás del otro).
       const sdkLoad = SMARTFIELDS_KEY ? loadSdk() : null;
       sdkLoad?.catch(() => {});
@@ -148,10 +161,9 @@ export default function Checkout() {
           box.innerHTML = "";
           const slot = document.createElement("div");
           box.appendChild(slot);
-          // Sin el ícono de tarjeta de dLocal: aparecía recién al cargar y movía el texto (las marcas ya se ven arriba).
-          const field = fields.create(type, { style: cardStyle, placeholder: PLACEHOLDERS[type], hideIcon: true });
-          const ready = () => { if (!stale()) setFieldReady((r) => ({ ...r, [type]: true })); };
-          if (field.on) { field.on("ready", ready); setTimeout(ready, 6000); } else ready();
+          // Placeholder " " (vacío muestra el "Card number" de dLocal) y sin su ícono: los dos son nuestros.
+          const field = fields.create(type, { style: cardStyle, placeholder: " ", hideIcon: true });
+          field.on?.("empty", (e?: { empty?: boolean }) => { if (!stale()) setFilled((f) => ({ ...f, [type]: e?.empty === false })); });
           field.mount(slot);
           return field;
         };
@@ -250,10 +262,13 @@ export default function Checkout() {
                   <span className={brand === "AM" ? "on" : ""}><Icon name="amex" logo /></span>
                 </span></span>
                 <div className="ck-cardbox">
-                  <div className="ck-card ck-card-pan"><div ref={panBox} />{!fieldReady.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}</div>
+                  <div className="ck-card ck-card-pan">
+                    <span className="ck-pan-ic">{brand === "VI" ? <Icon name="visa" logo /> : brand === "MC" ? <Icon name="mastercard" logo /> : brand === "AM" ? <Icon name="amex" logo /> : <CardIcon />}</span>
+                    <div ref={panBox} />{!filled.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}
+                  </div>
                   <div className="ck-card-row">
-                    <div className="ck-card ck-card-exp"><div ref={expBox} />{!fieldReady.expiration && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.expiration}</span>}</div>
-                    <div className="ck-card ck-card-cvv"><div ref={cvvBox} />{!fieldReady.cvv && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.cvv}</span>}</div>
+                    <div className="ck-card ck-card-exp"><div ref={expBox} />{!filled.expiration && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.expiration}</span>}</div>
+                    <div className="ck-card ck-card-cvv"><div ref={cvvBox} />{!filled.cvv && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.cvv}</span>}</div>
                   </div>
                 </div>
                 {brand === "AM" && <div className="ck-hint">American Express: el CVV son 4 dígitos al frente de la tarjeta.</div>}

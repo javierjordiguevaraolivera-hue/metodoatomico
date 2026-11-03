@@ -95,6 +95,9 @@ export default function Checkout() {
   const expBox = useRef<HTMLDivElement>(null);
   const cvvBox = useRef<HTMLDivElement>(null);
   const card = useRef<CardField | null>(null);
+  const panIcon = useRef<HTMLSpanElement>(null);
+  // La copia del ícono se apaga al mismo ritmo en que aparece el campo de dLocal; después solo queda el de dLocal.
+  const [panShown, setPanShown] = useState(false);
   const requested = useRef("");
   const attempt = useRef(0);
 
@@ -137,7 +140,7 @@ export default function Checkout() {
     const id = ++attempt.current;
     const stale = () => id !== attempt.current;
     (async () => {
-      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED);
+      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setPanShown(false);
       // El SDK baja al mismo tiempo que se crea el pago (antes iba uno detrás del otro).
       const sdkLoad = SMARTFIELDS_KEY ? loadSdk() : null;
       sdkLoad?.catch(() => {});
@@ -169,6 +172,18 @@ export default function Checkout() {
           return field;
         };
         card.current = mount(panBox.current, "pan");
+        // dLocal hace aparecer su iframe de a poco: cada cuadro, la copia toma la opacidad que le falta al suyo.
+        const pan = panBox.current;
+        const until = performance.now() + 15000;
+        const fade = () => {
+          if (stale()) return;
+          const shown = [...pan.querySelectorAll("iframe")].filter((f) => f.getBoundingClientRect().height > 0);
+          const a = Math.max(0, ...shown.map((f) => Number(getComputedStyle(f).opacity) || 0));
+          if (panIcon.current) panIcon.current.style.opacity = String(1 - a);
+          if (a >= 0.999 || performance.now() > until) setPanShown(true);
+          else requestAnimationFrame(fade);
+        };
+        requestAnimationFrame(fade);
         mount(expBox.current, "expiration");
         mount(cvvBox.current, "cvv");
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
@@ -264,7 +279,7 @@ export default function Checkout() {
                 </span></span>
                 <div className="ck-cardbox">
                   <div className="ck-card ck-card-pan">
-                    {!filled.pan && <span className="ck-pan-ic"><CardIcon /></span>}
+                    {!panShown && !filled.pan && <span className="ck-pan-ic" ref={panIcon}><CardIcon /></span>}
                     <div ref={panBox} />{!filled.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}
                   </div>
                   <div className="ck-card-row">

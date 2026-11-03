@@ -15,7 +15,7 @@ var CONFIG = {
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-checkout]'); if (!a) return;
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent('ma:checkout'));
+    window.dispatchEvent(new CustomEvent('ma:checkout', { detail: { el: a } }));
   });
 
   function pad(n) { return String(n).padStart(2, '0'); }
@@ -138,7 +138,7 @@ var CONFIG = {
     if (a === 'stop') { e.stopPropagation(); return; }
     if (a === 'goPrecio') return goPrecio(e);
     if (a === 'close') { e.preventDefault(); return closeIntro(); }
-    if (a === 'buyFromVideo') { e.preventDefault(); closeIntro(); window.dispatchEvent(new CustomEvent('ma:checkout')); return; }
+    if (a === 'buyFromVideo') { e.preventDefault(); closeIntro(); window.dispatchEvent(new CustomEvent('ma:checkout', { detail: { el: el } })); return; }
     if (a === 'unmute') { if (unlock) unlock(); return; }
     if (a === 'tapPlay') { e.preventDefault(); return tapPlay(); }
     if (a === 'speed') { e.preventDefault(); return toggleSpeed(); }

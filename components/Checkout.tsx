@@ -60,6 +60,21 @@ type Payment = { country: string; checkoutToken?: string; redirectUrl?: string }
 // Crea el pago en dLocal (solo al abrir el checkout, nunca por visita) e inicializa el SDK con él.
 // initialize deja un solo pago activo en el SDK: en fila, para que el último pedido sea el que queda.
 let initChain: Promise<unknown> = Promise.resolve();
+// Con mouse, el pago empieza a crearse al presionar el botón (antes de soltarlo), unos 100-200 ms antes del clic.
+// En celular no: tocar un botón al hacer scroll también lo presiona, y crearía pagos sin compra.
+let pending: { country: string; promise: Promise<Payment> } | null = null;
+function prefetchPayment(country: string) {
+  if (pending?.country === country) return;
+  const entry = { country, promise: createPayment(country) };
+  entry.promise.catch(() => { if (pending === entry) pending = null; });
+  pending = entry;
+}
+function takePayment(country: string) {
+  const p = pending?.country === country ? pending.promise : createPayment(country);
+  pending = null;
+  return p;
+}
+
 async function createPayment(country: string): Promise<Payment> {
   const sdkLoad = SMARTFIELDS_KEY ? loadSdk() : null;
   sdkLoad?.catch(() => {});
@@ -79,8 +94,7 @@ type FieldType = "pan" | "expiration" | "cvv";
 const PLACEHOLDERS: Record<FieldType, string> = { pan: "1234 1234 1234 1234", expiration: "MM / AA", cvv: "CVV" };
 const NOT_FILLED: Record<FieldType, boolean> = { pan: false, expiration: false, cvv: false };
 
-// Copia del ícono de tarjeta vacía de dLocal, justo debajo del suyo: mientras su campo carga (y aparece de a poco) se ve la copia,
-// y cuando la persona escribe se quita para que solo quede el de dLocal, que cambia a la marca.
+// Ícono de tarjeta vacía (el mismo dibujo que usa dLocal).
 function CardIcon() {
   return (
     <svg viewBox="0 0 32 21" aria-hidden="true">
@@ -90,6 +104,20 @@ function CardIcon() {
       </g>
     </svg>
   );
+}
+
+// Ícono del número: el de tarjeta vacía y, cuando dLocal reconoce la marca, su logo sobre fondo blanco.
+// Visa, Mastercard (solo el símbolo, sin la palabra, como en tamaños chicos) y Amex son nuestros;
+// cualquier otra marca usa el logo que publica dLocal, y si no carga queda el de tarjeta vacía.
+const DLOCAL_ICON_FILE: Record<string, string> = { "diners-club": "diners.svg", elo: "elo.png", hipercard: "hipercard.png" };
+function BrandIcon({ brand }: { brand: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!brand || broken) return <CardIcon />;
+  if (brand === "visa") return <Icon name="visa" logo />;
+  if (brand === "mastercard") return <Icon name="mastercard" logo />;
+  if (brand === "american-express" || brand === "amex") return <Icon name="amex" logo />;
+  const file = DLOCAL_ICON_FILE[brand] ?? `${brand}.svg`;
+  return <span className="ic-wrap ic-wrap-logo"><img src={`https://static.dlocal.com/fields/input-icons/${file}`} alt="" onError={() => setBroken(true)} /></span>;
 }
 
 // Fuente del sistema: el iframe de dLocal no carga Inter.
@@ -119,11 +147,17 @@ export default function Checkout() {
   const expBox = useRef<HTMLDivElement>(null);
   const cvvBox = useRef<HTMLDivElement>(null);
   const card = useRef<CardField | null>(null);
-  const panIcon = useRef<HTMLSpanElement>(null);
-  // La copia del ícono se apaga al mismo ritmo en que aparece el campo de dLocal; después solo queda el de dLocal.
-  const [panShown, setPanShown] = useState(false);
-  // Marca que dLocal ya dibuja dentro del campo (su logo de Visa es azul oscuro y no se ve sobre el fondo): le ponemos un fondo blanco detrás.
+  // Marca que reconoce dLocal mientras escriben el número ("visa", "mastercard"…), para el ícono del campo.
   const [panBrand, setPanBrand] = useState("");
+  // El checkout se arma escondido y aparece cuando los campos de dLocal ya están listos;
+  // mientras tanto el botón que tocaron se ve "cargando".
+  const [shown, setShown] = useState(false);
+  const busyEl = useRef<HTMLElement | null>(null);
+  const reveal = useCallback(() => {
+    setShown(true);
+    busyEl.current?.classList.remove("ma-busy");
+    busyEl.current = null;
+  }, []);
   const requested = useRef("");
   const attempt = useRef(0);
 
@@ -135,11 +169,20 @@ export default function Checkout() {
       if (w.requestIdleCallback) w.requestIdleCallback(warmUp, { timeout: 4000 });
       else setTimeout(warmUp, 2500);
     }
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      if ((e.target as Element | null)?.closest?.('[data-checkout],[data-action="buyFromVideo"]')) prefetchPayment(geoCountry());
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
   }, []);
 
   // Los botones "Comprar" de la página disparan este evento (public/landing/runtime.js).
   useEffect(() => {
-    const onBuy = () => {
+    const onBuy = (e: Event) => {
+      const el = (e as CustomEvent<{ el?: HTMLElement }>).detail?.el;
+      if (el && !busyEl.current) { el.classList.add("ma-busy"); busyEl.current = el; }
+      setShown(false);
       setOpen(true);
       track("InitiateCheckout", { value: PRICE_USD, currency: CURRENCY, content_name: PRODUCT_NAME, content_type: "product", num_items: 1 });
     };
@@ -147,7 +190,13 @@ export default function Checkout() {
     return () => window.removeEventListener("ma:checkout", onBuy);
   }, []);
 
-  const close = useCallback(() => { if (!paying) setOpen(false); }, [paying]);
+  const close = useCallback(() => { if (!paying) { setOpen(false); reveal(); } }, [paying, reveal]);
+
+  useEffect(() => {
+    if (!open || shown) return;
+    const t = setTimeout(reveal, 6000);
+    return () => clearTimeout(t);
+  }, [open, shown, reveal]);
 
   useEffect(() => {
     if (!open) return;
@@ -168,16 +217,16 @@ export default function Checkout() {
     const id = ++attempt.current;
     const stale = () => id !== attempt.current;
     (async () => {
-      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setPanShown(false); setPanBrand("");
+      setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setPanBrand("");
       try {
-        const data = await createPayment(country);
+        const data = await takePayment(country);
         if (stale()) return;
         setPayment(data);
         if (!country) { requested.current = data.country; setCountry(data.country); }
         const docs = COUNTRIES.find((c) => c.code === data.country)?.docs ?? [];
         setForm((f) => ({ ...f, documentType: docs.includes(f.documentType) ? f.documentType : docs[0] ?? "", installmentsId: "" }));
 
-        if (!SMARTFIELDS_KEY || !data.checkoutToken) return;
+        if (!SMARTFIELDS_KEY || !data.checkoutToken) { reveal(); return; }
         const sdk = window.dlocalGo!;
         if (stale() || !panBox.current || !expBox.current || !cvvBox.current) return;
         // Contenedores nuevos en cada intento: si se vuelve a montar en el mismo (al cambiar de país), dLocal deja el campo vacío.
@@ -186,37 +235,27 @@ export default function Checkout() {
           box.innerHTML = "";
           const slot = document.createElement("div");
           box.appendChild(slot);
-          // Placeholder " ": vacío, dLocal muestra su "Card number".
-          const field = fields.create(type, { style: cardStyle, placeholder: " " });
+          // Placeholder " " (vacío, dLocal muestra su "Card number") y sin su ícono: los dos son nuestros.
+          const field = fields.create(type, { style: cardStyle, placeholder: " ", hideIcon: true });
           field.on?.("empty", (e) => { if (!stale()) setFilled((f) => ({ ...f, [type]: e?.empty === false })); });
           if (type === "pan") field.on?.("brand", (e) => { if (!stale()) setPanBrand(e?.brand ?? ""); });
           field.mount(slot);
           return field;
         };
         card.current = mount(panBox.current, "pan");
-        // dLocal hace aparecer su iframe de a poco: cada cuadro, la copia toma la opacidad que le falta al suyo.
-        // El observador ajusta la copia en el mismo cuadro en que dLocal muestra el iframe (sin él va un cuadro atrasada).
-        const pan = panBox.current;
-        const until = performance.now() + 15000;
-        let done = false;
-        const sync = () => {
-          if (done) return;
-          const shown = [...pan.querySelectorAll("iframe")].filter((f) => f.getBoundingClientRect().height > 0);
-          const a = Math.max(0, ...shown.map((f) => Number(getComputedStyle(f).opacity) || 0));
-          if (panIcon.current) panIcon.current.style.opacity = String(1 - a);
-          if (stale() || a >= 0.999 || performance.now() > until) { done = true; observer.disconnect(); if (!stale()) setPanShown(true); }
-        };
-        const observer = new MutationObserver(sync);
-        observer.observe(pan, { subtree: true, childList: true, attributes: true });
-        const fade = () => { sync(); if (!done) requestAnimationFrame(fade); };
-        requestAnimationFrame(fade);
         mount(expBox.current, "expiration");
         mount(cvvBox.current, "cvv");
+        // El checkout aparece cuando los tres campos de dLocal terminaron de aparecer (ellos los muestran de a poco).
+        const boxes = [panBox.current, expBox.current, cvvBox.current];
+        const ready = () => boxes.every((b) => [...b.querySelectorAll("iframe")].some((f) => f.getBoundingClientRect().height > 0 && Number(getComputedStyle(f).opacity) > 0.99));
+        const wait = () => { if (stale()) return; if (ready()) reveal(); else requestAnimationFrame(wait); };
+        requestAnimationFrame(wait);
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
         sdk.onCardBinChange?.((bin) => setBrand(bin?.brand ?? ""));
         setCardReady(true);
       } catch (err) {
         if (stale()) return;
+        reveal();
         setError(err instanceof Error && err.message !== "error" && err.message !== "sdk" ? err.message : "No pudimos cargar el pago. Revisa tu conexión e intenta de nuevo.");
         requested.current = "";
         setCountry((c) => c || DEFAULT_COUNTRY);
@@ -257,7 +296,7 @@ export default function Checkout() {
   const withCard = Boolean(SMARTFIELDS_KEY);
 
   return (
-    <div className="ck-overlay" role="dialog" aria-modal="true" aria-label="Pagar Método Atómico" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
+    <div className={shown ? "ck-overlay" : "ck-overlay ck-prep"} role="dialog" aria-modal="true" aria-label="Pagar Método Atómico" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div className="ck-panel">
         <div className="ck-head">
           <div>
@@ -306,9 +345,8 @@ export default function Checkout() {
                 </span></span>
                 <div className="ck-cardbox">
                   <div className="ck-card ck-card-pan">
-                    {filled.pan && panBrand && <span className="ck-pan-chip" aria-hidden="true" />}
-                    {!panShown && !filled.pan && <span className="ck-pan-ic" ref={panIcon}><CardIcon /></span>}
-                    <div ref={panBox} />{!filled.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}
+                    <span className="ck-pan-ic"><BrandIcon key={filled.pan ? panBrand : ""} brand={filled.pan ? panBrand : ""} /></span>
+                    <div className="ck-pan-slot" ref={panBox} />{!filled.pan && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.pan}</span>}
                   </div>
                   <div className="ck-card-row">
                     <div className="ck-card ck-card-exp"><div ref={expBox} />{!filled.expiration && <span className="ck-ph" aria-hidden="true">{PLACEHOLDERS.expiration}</span>}</div>

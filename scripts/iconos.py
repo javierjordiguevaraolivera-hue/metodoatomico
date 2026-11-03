@@ -56,6 +56,8 @@ for prefix, pairs in by_set.items():
     data = fetch_set(prefix, [n for _, n in pairs])
     for key, name in pairs:
         svgs[key] = to_svg(data, name)
+# Mastercard en tamaño chico va sin la palabra (así lo pide su guía de marca): solo los dos círculos.
+svgs['mastercard'] = '<svg xmlns="http://www.w3.org/2000/svg" width="1.6em" height="1em" viewBox="0 0 24 15"><circle cx="7.5" cy="7.5" r="7.5" fill="#EB001B"/><circle cx="16.5" cy="7.5" r="7.5" fill="#F79E1B"/><path fill="#FF5F00" d="M12 1.5a7.5 7.5 0 0 1 0 12a7.5 7.5 0 0 1 0-12z"/></svg>'
 # Copia local para otros scripts que necesiten los mismos íconos
 json.dump(svgs, open('scripts/icons-cache.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 

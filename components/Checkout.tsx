@@ -238,13 +238,17 @@ export default function Checkout() {
           {withCard && payment?.redirectUrl && (
             <a className="ck-alt" href={payment.redirectUrl}><Icon name="banknote" /> ¿Prefieres efectivo, transferencia u otro método de tu país? Paga aquí</a>
           )}
+        </form>
+
+        {/* En pantallas anchas va en la columna izquierda, debajo del precio; en celular, al final */}
+        <div className="ck-aside">
           <ul className="ck-trust">
             <li><Icon name="shield" /> Garantía de 7 días</li>
             <li><Icon name="zap" /> Acceso inmediato al correo</li>
             <li><Icon name="lock" /> Datos cifrados por dLocal Go</li>
           </ul>
           <div className="ck-note">El cobro se hace en tu moneda local si aplica.</div>
-        </form>
+        </div>
       </div>
     </div>
   );

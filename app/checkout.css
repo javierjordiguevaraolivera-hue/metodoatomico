@@ -1,0 +1,24 @@
+/* Ventana de checkout (components/Checkout.tsx), con los colores de la landing y el turquesa de marca */
+.ck-overlay{position:fixed;inset:0;z-index:120;background:rgba(12,6,30,.86);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;overflow-y:auto}
+.ck-panel{width:100%;max-width:480px;max-height:calc(100dvh - 32px);overflow-y:auto;background:#1D1240;border:1px solid #35276A;border-radius:24px;padding:24px;box-sizing:border-box;color:#F7F4FF;font-family:Inter,system-ui,sans-serif;box-shadow:0 30px 90px -20px rgba(17,149,100,.45);animation:ckPop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes ckPop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.ck-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ck-kicker{font:500 12px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#2FD39B}
+.ck-title{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:28px;line-height:1.1}
+.ck-x{width:44px;height:44px;flex:none;border-radius:999px;border:1px solid #5E4D94;background:transparent;color:#F7F4FF;font-size:16px;cursor:pointer}
+.ck-price{margin:8px 0 18px;color:#AEA3D3;font-size:14px}
+.ck-price span{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:34px;color:#F7F4FF;margin-right:6px}
+.ck-form{display:flex;flex-direction:column;gap:14px}
+.ck-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ck-doc{grid-template-columns:120px 1fr}
+.ck-field{display:flex;flex-direction:column;gap:6px;font-size:14px;color:#D2C9EE;min-width:0}
+.ck-field input,.ck-field select,.ck-card{min-height:48px;border-radius:12px;border:1px solid #5E4D94;background:#0B0620;color:#F7F4FF;padding:0 14px;font:500 16px Inter,sans-serif;box-sizing:border-box;width:100%}
+.ck-card{padding:11px 14px}
+.ck-field input:focus,.ck-field select:focus{outline:2px solid #119564;outline-offset:1px;border-color:#119564}
+.ck-pay{display:flex;align-items:center;justify-content:center;min-height:56px;border:0;border-radius:14px;background:#119564;color:#fff !important;font:800 18px Inter,sans-serif;cursor:pointer;text-decoration:none;box-shadow:0 12px 34px -10px rgba(17,149,100,.8);transition:transform .2s,filter .2s}
+.ck-pay:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.ck-pay:disabled,.ck-pay[aria-disabled="true"]{opacity:.55;cursor:default;transform:none}
+.ck-alt{color:#D2C9EE;font-size:14px;text-align:center;text-decoration:underline;text-underline-offset:3px}
+.ck-error{background:rgba(255,79,107,.12);border:1px solid #FF6B8B;border-radius:12px;padding:10px 14px;font-size:14px}
+.ck-note{color:#9A8FC4;font-size:13px;text-align:center}
+@media (max-width:480px){.ck-panel{padding:20px 16px}.ck-row{grid-template-columns:1fr}.ck-doc{grid-template-columns:110px 1fr}}

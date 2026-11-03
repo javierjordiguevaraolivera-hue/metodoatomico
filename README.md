@@ -1,6 +1,6 @@
 # metodoatomico
 
-Landing de **Método Atómico** en Next.js para Vercel (metodo-atomico.lat). Producto único de **$25 USD**, cobrado con **dLocal Go** sin salir de la página.
+Landing de **Método Atómico** en Next.js para Vercel (www.metodoatomico.lat). Producto único de **$25 USD**, cobrado con **dLocal Go** sin salir de la página.
 
 ## Cómo está armada
 

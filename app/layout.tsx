@@ -3,7 +3,7 @@ import "./landing.css";
 import "./checkout.css";
 import "./legal.css";
 
-const site = process.env.NEXT_PUBLIC_SITE_URL || "https://metodo-atomico.lat";
+const site = process.env.NEXT_PUBLIC_SITE_URL || "https://www.metodoatomico.lat";
 
 export const metadata: Metadata = {
   metadataBase: new URL(site),

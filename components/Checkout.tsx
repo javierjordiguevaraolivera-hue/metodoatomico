@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CURRENCY, DLOCALGO_LIVE, DLOCALGO_SDK_URL, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
-import { COUNTRIES, DEFAULT_COUNTRY, docExample } from "@/lib/countries";
+import { COUNTRIES, DEFAULT_COUNTRY, docExample, isCountry } from "@/lib/countries";
 import { track } from "@/lib/track-client";
 import Icon from "./Icon";
 
@@ -49,6 +49,47 @@ function warmUp() {
   loadSdk().catch(() => {});
 }
 
+// País que detectó el servidor al entrar a la landing (proxy.ts), para abrir el checkout con el país ya puesto.
+function geoCountry() {
+  const c = document.cookie.match(/(?:^|; )ma_country=([A-Z]{2})/)?.[1];
+  return c && isCountry(c) ? c : "";
+}
+
+type Payment = { country: string; checkoutToken?: string; redirectUrl?: string };
+
+// Pago preparado de antemano: se crea en dLocal y se inicializa el SDK cuando la persona empieza a usar la página,
+// así al abrir el checkout solo falta montar los campos. Cada pago preparado se usa una sola vez.
+const PREPARED_MAX_MS = 20 * 60 * 1000;
+let prepared: { country: string; at: number; promise: Promise<Payment> } | null = null;
+// initialize deja un solo pago activo en el SDK: en fila, para que el último pedido sea el que queda.
+let initChain: Promise<unknown> = Promise.resolve();
+function preparePayment(country: string) {
+  if (prepared && prepared.country === country && Date.now() - prepared.at < PREPARED_MAX_MS) return prepared.promise;
+  const promise = (async () => {
+    const sdkLoad = SMARTFIELDS_KEY ? loadSdk() : null;
+    sdkLoad?.catch(() => {});
+    const res = await fetch("/api/checkout/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(country ? { country } : {}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "error");
+    if (SMARTFIELDS_KEY && data.checkoutToken) {
+      await sdkLoad;
+      const init = initChain.then(() => window.dlocalGo!.initialize(SMARTFIELDS_KEY, data.checkoutToken));
+      initChain = init.catch(() => {});
+      await init;
+    }
+    return data as Payment;
+  })();
+  const entry = { country, at: Date.now(), promise };
+  prepared = entry;
+  promise.catch(() => { if (prepared === entry) prepared = null; });
+  return promise;
+}
+function takePayment(country: string) {
+  const p = preparePayment(country);
+  prepared = null;
+  return p;
+}
+
 type FieldType = "pan" | "expiration" | "cvv";
 const PLACEHOLDERS: Record<FieldType, string> = { pan: "1234 1234 1234 1234", expiration: "MM / AA", cvv: "CVV" };
 const NOT_FILLED: Record<FieldType, boolean> = { pan: false, expiration: false, cvv: false };
@@ -72,8 +113,6 @@ const cardStyle = {
   invalid: { color: "#FF6B8B", iconColor: "#FF6B8B" },
   focus: { color: "#FFFFFF" },
 };
-
-type Payment = { country: string; checkoutToken?: string; redirectUrl?: string };
 
 export default function Checkout() {
   const [open, setOpen] = useState(false);
@@ -102,11 +141,21 @@ export default function Checkout() {
   const attempt = useRef(0);
 
   useEffect(() => {
-    if (!SMARTFIELDS_KEY) return;
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: object) => number };
-    if (w.requestIdleCallback) { w.requestIdleCallback(warmUp, { timeout: 4000 }); return; }
-    const t = setTimeout(warmUp, 2500);
-    return () => clearTimeout(t);
+    const geo = geoCountry();
+    if (geo) setCountry(geo);
+    if (SMARTFIELDS_KEY) {
+      const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: object) => number };
+      if (w.requestIdleCallback) w.requestIdleCallback(warmUp, { timeout: 4000 });
+      else setTimeout(warmUp, 2500);
+    }
+    // A la primera interacción real (scroll, toque, tecla) se prepara el pago; los bots que no interactúan no crean pagos.
+    const events = ["scroll", "pointerdown", "touchstart", "keydown"] as const;
+    const onFirst = () => {
+      events.forEach((ev) => window.removeEventListener(ev, onFirst));
+      preparePayment(geoCountry()).catch(() => {});
+    };
+    events.forEach((ev) => window.addEventListener(ev, onFirst, { passive: true }));
+    return () => events.forEach((ev) => window.removeEventListener(ev, onFirst));
   }, []);
 
   // Los botones "Comprar" de la página disparan este evento (public/landing/runtime.js).
@@ -141,13 +190,9 @@ export default function Checkout() {
     const stale = () => id !== attempt.current;
     (async () => {
       setLoading(true); setError(""); setCardReady(false); setInstallments([]); setFilled(NOT_FILLED); setPanShown(false);
-      // El SDK baja al mismo tiempo que se crea el pago (antes iba uno detrás del otro).
-      const sdkLoad = SMARTFIELDS_KEY ? loadSdk() : null;
-      sdkLoad?.catch(() => {});
       try {
-        const res = await fetch("/api/checkout/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(country ? { country } : {}) });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "error");
+        // Normalmente ya está listo (se preparó al empezar a usar la página); si no, se crea aquí.
+        const data = await takePayment(country);
         if (stale()) return;
         setPayment(data);
         if (!country) { requested.current = data.country; setCountry(data.country); }
@@ -155,9 +200,7 @@ export default function Checkout() {
         setForm((f) => ({ ...f, documentType: docs.includes(f.documentType) ? f.documentType : docs[0] ?? "", installmentsId: "" }));
 
         if (!SMARTFIELDS_KEY || !data.checkoutToken) return;
-        await sdkLoad;
         const sdk = window.dlocalGo!;
-        await sdk.initialize(SMARTFIELDS_KEY, data.checkoutToken);
         if (stale() || !panBox.current || !expBox.current || !cvvBox.current) return;
         // Contenedores nuevos en cada intento: si se vuelve a montar en el mismo (al cambiar de país), dLocal deja el campo vacío.
         const fields = sdk.fields();

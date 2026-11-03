@@ -64,6 +64,22 @@ body:has(.ma-page),body:has(.ac-page){background:#120A2A}
 .ma-dl{grid-area:dl;display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:12px;background:#119564;color:#fff;text-decoration:none;font-weight:800;font-size:16px}
 .ma-empty{display:flex;gap:10px;align-items:flex-start;padding:16px;border:1px dashed #4A3B82;border-radius:16px;color:#D2C9EE;font-size:15px;line-height:1.5}
 .ma-empty .ic-wrap{color:#2FD39B;font-size:20px;margin-top:2px}
+.ma-mods-nav{display:flex;gap:8px;overflow-x:auto;margin:0 0 22px;padding-bottom:4px;scrollbar-width:none}
+.ma-mods-nav a{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid #35276A;border-radius:999px;background:#160E33;color:#D2C9EE;text-decoration:none;font-size:14px;font-weight:600;white-space:nowrap}
+.ma-mods-nav a span{font:600 12px 'JetBrains Mono',monospace;color:#2FD39B}
+.ma-mod{scroll-margin-top:16px}
+.ma-mod h2{display:flex;align-items:center;gap:12px}
+.ma-mod h2 small{display:block;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#9A8FC4;margin-bottom:2px}
+.ma-mod-ic{flex:none;width:40px;height:40px;border-radius:12px;background:rgba(47,211,155,.14);color:#2FD39B;display:flex;align-items:center;justify-content:center;font-size:20px}
+.ma-lessons{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.ma-lesson{padding:16px;border:1px solid #2E2260;border-radius:18px;background:#160E33;display:grid;gap:12px;min-width:0}
+.ma-lesson h3{margin:0;display:flex;gap:10px;align-items:baseline;font-size:17px;line-height:1.3}
+.ma-lesson h3 span{flex:none;font:600 13px 'JetBrains Mono',monospace;color:#9A8FC4}
+.ma-points{margin:0;padding-left:20px;display:grid;gap:6px;color:#D2C9EE;font-size:14.5px;line-height:1.5}
+.ma-cmds{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px;color:#9A8FC4}
+.ma-cmds code{font:500 13px 'JetBrains Mono',monospace;background:#2A1C55;color:#F7F4FF;padding:4px 9px;border-radius:8px;overflow-wrap:anywhere}
+.ma-file-soon{opacity:.75}
+.ma-dl-soon{background:#2A1C55;color:#AEA3D3;font-weight:700}
 .ma-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .ma-step{display:grid;grid-template-columns:28px 36px minmax(0,1fr);gap:12px;align-items:start;padding:14px;border:1px solid #2E2260;border-radius:16px;background:#160E33}
 .ma-step-n{font:600 13px 'JetBrains Mono',monospace;color:#9A8FC4;padding-top:9px;text-align:center}

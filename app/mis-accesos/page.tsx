@@ -13,34 +13,168 @@ const fileIcon = (name: string): IconName =>
   /\.(zip|rar|7z)$/i.test(name) ? "package" : /\.(mp4|mov|webm)$/i.test(name) ? "file-video" : /\.(png|jpe?g|webp|gif)$/i.test(name) ? "image" : "file-text";
 const label = (name: string) => name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ");
 
-// Los archivos se entregan tal cual (el sistema busca los ejemplos por su nombre): aquí solo se ordenan y se explican.
-const BOVEDA: Record<string, string> = {
-  "plan-semana-1": "Tu plan de la semana 1",
-  "elige-tu-camino": "Qué vender con tus videos",
-  "primeros-clientes": "Tus primeros clientes",
-  "socios-atom": "Socios",
-  "proximos-30-dias": "Tus próximos 30 días",
-};
-type FileInfo = { order: number; title: string; tag?: string; note?: string };
-function fileInfo(name: string): FileInfo {
-  if (/v2\.zip$/i.test(name)) return { order: 0, title: "Sistema 2.0", tag: "Empieza aquí", note: "Descomprímelo en una carpeta nueva: es la carpeta que abres en tu IA." };
-  const ej = name.match(/Ejemplo (.+)\.zip$/i);
-  if (ej) return { order: 1, title: `Ejemplo: ${ej[1]}`, tag: "Obligatorio", note: "Ponlo dentro de la carpeta tal cual: sin descomprimirlo ni cambiarle el nombre." };
-  const bv = name.match(/Boveda (\d+) - (.+)\.pdf$/i);
-  if (bv) return { order: 10 + Number(bv[1]), title: `Bóveda ${bv[1]}: ${BOVEDA[bv[2]] ?? label(bv[2])}`, tag: "Bonus" };
-  if (/ELITE\.zip$/i.test(name)) return { order: 50, title: "Sistema 1 (versión anterior)", tag: "Opcional", note: "Para empezar usa el Sistema 2.0. Este es solo si ya tenías la versión 1." };
-  return { order: 40, title: label(name) };
-}
+// El curso, por módulos y clases (mismo orden que la guía). Los archivos se entregan tal cual:
+// el sistema busca los ejemplos por su nombre, así que aquí solo se nombran y se explican.
+type FileSpec = { name: string; title: string; tag?: "Empieza aquí" | "Obligatorio" | "Bonus" | "Opcional"; note?: string };
+type Lesson = { n: string; title: string; points: string[]; cmds?: string[]; files?: FileSpec[] };
+type Module = { n: number; icon: IconName; title: string; lessons: Lesson[] };
 
-const STEPS: { icon: IconName; title: string; text: string }[] = [
-  { icon: "monitor", title: "Ten listo tu equipo", text: "Una computadora Mac o Windows con la app de escritorio de Claude (pestaña Code) o de ChatGPT (Codex). En la web no funciona. Y una cuenta de ElevenLabs para la voz." },
-  { icon: "download", title: "Descarga 3 archivos", text: "El Sistema 2.0 y los 2 ejemplos (estrella verde y alcohol). Los ejemplos son obligatorios: el sistema los usa como referencia de calidad en cada video." },
-  { icon: "folder", title: "Arma la carpeta", text: "Descomprime el Sistema 2.0 en una carpeta nueva y mete dentro los 2 ZIP de ejemplos tal cual, sin descomprimirlos ni cambiarles el nombre." },
-  { icon: "zap", title: "Ábrela en tu IA y escribe «configúrame»", text: "Claude: Code › Select folder › elige la carpeta. ChatGPT: Codex › + junto a Projects › Local › elige la carpeta (si pregunta si confías en ella, di que sí). Acepta cuando pida instalar programas; la primera vez tarda unos minutos." },
-  { icon: "lock", title: "Pega tu clave de ElevenLabs", text: "Abre PEGA-AQUI-TU-CLAVE-ELEVENLABS.txt y pega tu clave después de CLAVE= (empieza con sk_). Se saca en elevenlabs.io › Developers › API Keys › Create Key, con «Restrict Key» apagado. Nunca la pegues en el chat." },
-  { icon: "sparkles", title: "Haz tu primer video", text: "Escribe «Hazme un video sobre …». Te muestra 2 inicios y el guion: elige uno o escribe «adelante». Puede tardar hasta 1 hora, deja la compu encendida. El video, la portada y las descripciones quedan en la carpeta salida." },
-  { icon: "play", title: "Súbelo y repite", text: "Publica el video en Instagram, TikTok y YouTube Shorts. Un video por día durante 30 días es lo que hace crecer la cuenta." },
+const EJEMPLO_NOTE = "Ponlo dentro de la carpeta del sistema tal cual: sin descomprimirlo ni cambiarle el nombre.";
+
+const MODULES: Module[] = [
+  {
+    n: 1, icon: "zap", title: "Empieza aquí",
+    lessons: [
+      {
+        n: "1.1", title: "Bienvenida",
+        points: [
+          "Le das un tema en una frase y tu IA te entrega un video vertical listo: guion, voz, animación, subtítulos, portada y el texto para publicar.",
+          "En 15 minutos: descargas, abres la carpeta en tu IA, escribes «configúrame» y pides tu primer video o tu calendario del mes.",
+          "Incluye 4 packs, 3 estilos de video, portadas, descripciones, repurposing y el kit para vender videos a negocios.",
+        ],
+      },
+      {
+        n: "1.2", title: "Descarga tus 3 archivos",
+        points: [
+          "Los 3 son obligatorios: el sistema usa los 2 ejemplos como referencia de calidad en cada video.",
+          "Descomprime el Sistema 2.0 en una carpeta nueva y mete dentro los 2 ZIP de ejemplos tal cual.",
+          "Son de uso personal: no los compartas ni los revendas.",
+        ],
+        files: [
+          { name: "ATOM ELITE v2.zip", title: "Sistema 2.0", tag: "Empieza aquí", note: "Descomprímelo en una carpeta nueva: es la carpeta que abres en tu IA." },
+          { name: "ATOM ELITE - Ejemplo estrella verde.zip", title: "Ejemplo: estrella verde", tag: "Obligatorio", note: EJEMPLO_NOTE },
+          { name: "ATOM ELITE - Ejemplo alcohol.zip", title: "Ejemplo: alcohol", tag: "Obligatorio", note: EJEMPLO_NOTE },
+        ],
+      },
+      {
+        n: "1.3", title: "Instálalo en tu IA",
+        points: [
+          "Solo funciona en la app de escritorio (Mac o Windows), no en la web.",
+          "Claude: pestaña Code › Select folder › elige la carpeta. ChatGPT: Codex › + junto a Projects › deja Local › elige la carpeta. Si pregunta si confías en ella, di que sí.",
+          "Escribe «configúrame». Instala lo que falta, ordena los ejemplos y te pregunta idioma, nicho, cómo cerrar tus videos y si quieres efectos de sonido. Acepta cuando pida instalar programas; la primera vez tarda unos minutos.",
+          "Clave de ElevenLabs (la voz): abre PEGA-AQUI-TU-CLAVE-ELEVENLABS.txt, pega tu clave después de CLAVE= y guarda. Nunca la pegues en el chat.",
+          "Cómo sacarla: elevenlabs.io › Developers › API Keys › Create Key › apaga «Restrict Key» › copia la clave que empieza con sk_ (el ID corto no sirve).",
+          "Al terminar te muestra el menú. La primera portada te pide el color de tu marca. Los mismos pasos, con más detalle, están en EMPIEZA-AQUI.html dentro de la carpeta.",
+        ],
+        cmds: ["configúrame", "menú"],
+      },
+      {
+        n: "1.4", title: "Tu primer video",
+        points: [
+          "Pídelo con tus palabras. Sin tema, pide 5 temas o el calendario del mes.",
+          "Te pregunta el estilo o te recomienda uno; investiga, escribe el guion, dibuja y se revisa solo.",
+          "Te muestra 2 inicios y el guion: elige uno, pide cambios o escribe «adelante».",
+          "Puede tardar hasta 1 hora: deja la compu encendida y la app abierta.",
+          "En la carpeta salida quedan el video, la portada flyer.jpg y las descripciones para cada red.",
+          "Para ahorrar: cuando la conversación se alargue, abre una nueva en la misma carpeta. Meta: 1 video al día durante 30 días.",
+        ],
+        cmds: ["Hazme un video sobre …", "adelante", "Dame 5 temas"],
+      },
+    ],
+  },
+  {
+    n: 2, icon: "sparkles", title: "Tus packs",
+    lessons: [
+      {
+        n: "2.1", title: "Ideas sin fin: calendario, nichos, 100 temas y series",
+        points: [
+          "Calendario: 30 días de temas de tu nicho, uno por día, con datos comprobados.",
+          "Nichos: 11 listos (ciencia, cuerpo humano, historia, dinero, psicología, tecnología, animales, comida, curiosidades, negocios, deporte) o uno tuyo.",
+          "100 temas probados en formato reel; recuerda los que ya usaste.",
+          "Series: un tema grande en 3 a 5 partes, cada una con gancho a la siguiente.",
+        ],
+        cmds: ["Ármame el calendario del mes", "Hazme el video del día 5", "Elige mi nicho", "Hazme el tema 37", "Hazme una serie sobre …", "Sigue la serie"],
+      },
+      {
+        n: "2.2", title: "Haz que exploten: portadas, descripciones y repurposing",
+        points: [
+          "Portada automática (flyer.jpg) pensada para TikTok, Reels y Shorts: hace 3 y te entrega la mejor.",
+          "Descripciones con palabras clave y hashtags para Instagram, TikTok, YouTube Shorts y Facebook (en descripciones.md).",
+          "Repurposing: carrusel, hilo, post de texto, guion de 15 segundos e ideas para los próximos videos.",
+        ],
+        cmds: ["Otra portada", "Hazla más corta", "Cambia el CTA", "Conviértelo en carrusel", "Sácale más contenido"],
+      },
+      {
+        n: "2.3", title: "Los 3 estilos de video",
+        points: [
+          "ATOM: dibujado, con luz y color. Para ciencia, cuerpo humano, naturaleza y curiosidades.",
+          "Cine Nocturno: documental de noche con escenas 3D oscuras y cálidas. Para historias, misterios, psicología y casos reales.",
+          "Datos Neón: infografía animada con cifras neón al ritmo de la voz. Para dinero, comparaciones y velocidades.",
+          "Hay un ejemplo de cada uno en la carpeta ejemplo-estilos.",
+        ],
+        cmds: ["Hazme un video sobre … en estilo Cine Nocturno"],
+      },
+      {
+        n: "2.4", title: "Gana dinero: vende videos a negocios",
+        points: [
+          "Te arma la oferta en 3 paquetes, 10 negocios de tu zona, una muestra gratis para los 3 mejores, los mensajes, la propuesta de 1 página y los videos con la marca del cliente.",
+          "Todo queda guardado en la carpeta negocios.",
+        ],
+        cmds: ["Quiero vender videos a negocios", "¿Cuánto cobro?", "Hazme una propuesta para …"],
+      },
+    ],
+  },
+  {
+    n: 3, icon: "shield", title: "Ayuda y actualizaciones",
+    lessons: [
+      {
+        n: "3.1", title: "Soporte y actualizaciones",
+        points: [
+          "Si algo falla, primero escribe «doctor»: revisa tu compu y arregla lo que falte.",
+          "Si sigue, escríbenos por Instagram (botón de abajo) y te ayudamos hasta que salga tu primer video.",
+          "Las actualizaciones aparecen en esta misma página, sin costo.",
+        ],
+        cmds: ["doctor"],
+      },
+    ],
+  },
+  {
+    n: 4, icon: "gift", title: "Bonus: la Bóveda",
+    lessons: [
+      { n: "4.1", title: "Lo que pasó de verdad", points: ["Qué se hizo para crecer la cuenta y tu plan de la semana 1."], files: [{ name: "ATOM Elite - Boveda 1 - plan-semana-1.pdf", title: "Tu plan de la semana 1", tag: "Bonus" }] },
+      { n: "4.2", title: "Qué vender con tus videos", points: ["Los 3 caminos, cómo elegir uno y tu plan de 3 días."], files: [{ name: "ATOM Elite - Boveda 2 - elige-tu-camino.pdf", title: "Elige tu camino", tag: "Bonus" }] },
+      { n: "4.3", title: "Tus primeros clientes", points: ["Oferta en 3 paquetes, lista, muestra, mensajes, objeciones, cierre y plan de 30 días."], files: [{ name: "ATOM Elite - Boveda 3 - primeros-clientes.pdf", title: "Tus primeros clientes", tag: "Bonus" }] },
+      { n: "4.4", title: "Socios", points: ["Cómo funciona el programa de socios y su plan de 14 días."], files: [{ name: "ATOM Elite - Boveda 4 - socios-atom.pdf", title: "Socios", tag: "Bonus" }] },
+      { n: "4.5", title: "Lo que viene", points: ["Tu plan de los próximos 30 días."], files: [{ name: "ATOM Elite - Boveda 5 - proximos-30-dias.pdf", title: "Tus próximos 30 días", tag: "Bonus" }] },
+    ],
+  },
+  {
+    n: 5, icon: "package", title: "Actualizaciones",
+    lessons: [
+      {
+        n: "5.1", title: "Sistema 2.0",
+        points: [
+          "Lo nuevo: guiones contados como historia y revisados antes de grabar, retos para el espectador, más elementos en pantalla y efectos de sonido, personas más expresivas en 3D y más revisiones antes de entregar.",
+          "Si empiezas hoy, ya lo tienes: es el Sistema 2.0 de la clase 1.2.",
+          "Si ya usabas la versión 1: descomprime el 2.0 en una carpeta nueva (no sobrescribas la anterior), mete los 2 ZIP de ejemplos, ábrela en tu IA y escribe «actualízame desde mi carpeta anterior». Trae tus preferencias, marca, clave, temas y proyectos.",
+        ],
+        cmds: ["actualízame desde mi carpeta anterior"],
+        files: [{ name: "ATOM ELITE.zip", title: "Sistema 1 (versión anterior)", tag: "Opcional", note: "Solo si la necesitas: para empezar usa el Sistema 2.0." }],
+      },
+    ],
+  },
 ];
+
+const TAG_CLASS: Record<string, string> = { "Empieza aquí": "main", Obligatorio: "req" };
+const COURSE_FILES = new Set(MODULES.flatMap((m) => m.lessons.flatMap((l) => (l.files ?? []).map((f) => f.name))));
+
+function FileRow({ spec, file }: { spec: FileSpec; file?: DownloadFile }) {
+  return (
+    <li className={file ? "ma-file" : "ma-file ma-file-soon"}>
+      <span className="ma-file-ic"><Icon name={fileIcon(spec.name)} /></span>
+      <span className="ma-file-txt">
+        <strong>{spec.title}{spec.tag && <em className={`ma-tag ma-tag-${TAG_CLASS[spec.tag] ?? "opt"}`}>{spec.tag}</em>}</strong>
+        {spec.note && <span className="ma-file-note">{spec.note}</span>}
+        <small>{spec.name}{file?.size ? ` · ${size(file.size)}` : ""}</small>
+      </span>
+      {file ? (
+        <a className="ma-dl" href={`/api/descarga?f=${encodeURIComponent(file.name)}`}><Icon name="download" /> Descargar</a>
+      ) : (
+        <span className="ma-dl ma-dl-soon"><Icon name="clock" /> Muy pronto</span>
+      )}
+    </li>
+  );
+}
 
 export default async function MisAccesos() {
   const session = await currentSession();
@@ -50,9 +184,10 @@ export default async function MisAccesos() {
     findCustomer(session.email).catch(() => null),
     listDownloads().catch((err) => { console.error("mis-accesos: archivos", err); return [] as DownloadFile[]; }),
   ]);
-  const list = files.map((f) => ({ ...f, info: fileInfo(f.name) })).sort((a, b) => a.info.order - b.info.order || a.name.localeCompare(b.name));
   if (!order) redirect("/api/acceso/salir");
 
+  const byName = new Map(files.map((f) => [f.name, f]));
+  const extra = files.filter((f) => !COURSE_FILES.has(f.name)).sort((a, b) => a.name.localeCompare(b.name));
   const minutes = Math.max(1, Math.round((session.exp - Date.now()) / 60000));
   const name = customer?.first_name?.trim();
 
@@ -68,44 +203,43 @@ export default async function MisAccesos() {
         <div>
           <div className="ac-kicker">Tu acceso</div>
           <h1 className="ma-title">{name ? `¡Hola, ${name}!` : "¡Hola!"} Bienvenido a <span>Método Atómico</span></h1>
-          <p className="ma-sub">Aquí tienes todo para hacer tu primer video viral. Entraste como <strong>{session.email}</strong>.</p>
+          <p className="ma-sub">Aquí tienes todo para hacer tu primer video viral: 5 módulos, en orden. Entraste como <strong>{session.email}</strong>.</p>
           <p className="ma-session"><Icon name="clock" /> Tu sesión vence en {minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`}. Después vuelves a entrar con tu correo.</p>
         </div>
       </section>
 
-      <section className="ma-block">
-        <h2>Tus descargas</h2>
-        {list.length ? (
-          <ul className="ma-files">
-            {list.map((f) => (
-              <li key={f.name} className="ma-file">
-                <span className="ma-file-ic"><Icon name={fileIcon(f.name)} /></span>
-                <span className="ma-file-txt">
-                  <strong>{f.info.title}{f.info.tag && <em className={`ma-tag ma-tag-${f.info.order === 0 ? "main" : f.info.tag === "Obligatorio" ? "req" : "opt"}`}>{f.info.tag}</em>}</strong>
-                  {f.info.note && <span className="ma-file-note">{f.info.note}</span>}
-                  <small>{f.name}{f.size ? ` · ${size(f.size)}` : ""}</small>
-                </span>
-                <a className="ma-dl" href={`/api/descarga?f=${encodeURIComponent(f.name)}`}><Icon name="download" /> Descargar</a>
+      <nav className="ma-mods-nav" aria-label="Módulos">
+        {MODULES.map((m) => (
+          <a key={m.n} href={`#modulo-${m.n}`}><span>{m.n}</span>{m.title}</a>
+        ))}
+      </nav>
+
+      {MODULES.map((m) => (
+        <section key={m.n} id={`modulo-${m.n}`} className="ma-block ma-mod">
+          <h2><span className="ma-mod-ic"><Icon name={m.icon} /></span><span><small>Módulo {m.n}</small>{m.title}</span></h2>
+          <ol className="ma-lessons">
+            {m.lessons.map((l) => (
+              <li key={l.n} className="ma-lesson">
+                <h3><span>{l.n}</span>{l.title}</h3>
+                <ul className="ma-points">{l.points.map((p) => <li key={p}>{p}</li>)}</ul>
+                {l.cmds && (
+                  <div className="ma-cmds"><span>Escríbele:</span>{l.cmds.map((c) => <code key={c}>{c}</code>)}</div>
+                )}
+                {l.files && (
+                  <ul className="ma-files">{l.files.map((f) => <FileRow key={f.name} spec={f} file={byName.get(f.name)} />)}</ul>
+                )}
               </li>
             ))}
-          </ul>
-        ) : (
-          <div className="ma-empty"><Icon name="package" /> Estamos preparando tus archivos. Vuelve a entrar en unos minutos o escríbenos por Instagram.</div>
-        )}
-      </section>
+          </ol>
+        </section>
+      ))}
 
-      <section className="ma-block">
-        <h2>Paso a paso</h2>
-        <ol className="ma-steps">
-          {STEPS.map((s, i) => (
-            <li key={s.title} className="ma-step">
-              <span className="ma-step-n">{i + 1}</span>
-              <span className="ma-step-ic"><Icon name={s.icon} /></span>
-              <span><strong>{s.title}</strong><span>{s.text}</span></span>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {extra.length > 0 && (
+        <section className="ma-block">
+          <h2>Más archivos</h2>
+          <ul className="ma-files">{extra.map((f) => <FileRow key={f.name} spec={{ name: f.name, title: label(f.name) }} file={f} />)}</ul>
+        </section>
+      )}
 
       <section className="ma-help">
         <div>

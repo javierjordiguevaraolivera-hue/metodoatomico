@@ -316,3 +316,18 @@ x-if{display:contents}x-if[hidden]{display:none}html{scroll-behavior:smooth}/* �
 /* Separación entre el carrito y el texto en botones que no tienen gap */
 a > svg.ic:first-child{margin-right:.4em}
 .ps-btn > svg.ic:first-child,.hero-cta > svg.ic:first-child{margin-right:0}
+
+/* "Acceder" en el menú: texto en computadora, solo ícono en celular */
+.nav-access{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:1px solid #43337A;border-radius:999px;color:#F7F4FF !important;text-decoration:none;font-weight:600;font-size:15px;box-sizing:border-box}
+.nav-access .ic{font-size:18px}
+.nav-access:hover{border-color:#2FD39B}
+@media (max-width:759px){
+  .nav-access{width:44px;padding:0;justify-content:center}
+  .nav-access span{display:none}
+}
+/* Celulares angostos: sin el botón de sonido en el menú (sigue en la fábrica) para que entren Acceder y Comprar */
+@media (max-width:419px){
+  .top-nav .snd-btn{display:none}
+  .top-nav img{height:28px !important}
+  .top-nav nav{gap:8px !important}
+}

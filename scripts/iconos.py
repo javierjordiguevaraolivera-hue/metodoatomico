@@ -18,7 +18,7 @@ ICONS = {
     'atom': 'lucide:atom', 'sparkles': 'lucide:sparkles', 'pointer': 'lucide:pointer', 'mail': 'lucide:mail',
     'banknote': 'lucide:banknote', 'landmark': 'lucide:landmark',
     'circle-x': 'lucide:circle-x', 'cart': 'lucide:shopping-cart',
-    'download': 'lucide:download', 'log-out': 'lucide:log-out', 'clock': 'lucide:clock', 'folder': 'lucide:folder-open', 'monitor': 'lucide:monitor',
+    'download': 'lucide:download', 'log-out': 'lucide:log-out', 'log-in': 'lucide:log-in', 'user': 'lucide:circle-user-round', 'clock': 'lucide:clock', 'folder': 'lucide:folder-open', 'monitor': 'lucide:monitor',
     # marcas
     'instagram': 'simple-icons:instagram', 'pix': 'simple-icons:pix',
     'visa': 'logos:visa', 'mastercard': 'logos:mastercard', 'amex': 'logos:amex',

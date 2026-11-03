@@ -173,16 +173,20 @@ export default function Checkout() {
         };
         card.current = mount(panBox.current, "pan");
         // dLocal hace aparecer su iframe de a poco: cada cuadro, la copia toma la opacidad que le falta al suyo.
+        // El observador ajusta la copia en el mismo cuadro en que dLocal muestra el iframe (sin él va un cuadro atrasada).
         const pan = panBox.current;
         const until = performance.now() + 15000;
-        const fade = () => {
-          if (stale()) return;
+        let done = false;
+        const sync = () => {
+          if (done) return;
           const shown = [...pan.querySelectorAll("iframe")].filter((f) => f.getBoundingClientRect().height > 0);
           const a = Math.max(0, ...shown.map((f) => Number(getComputedStyle(f).opacity) || 0));
           if (panIcon.current) panIcon.current.style.opacity = String(1 - a);
-          if (a >= 0.999 || performance.now() > until) setPanShown(true);
-          else requestAnimationFrame(fade);
+          if (stale() || a >= 0.999 || performance.now() > until) { done = true; observer.disconnect(); if (!stale()) setPanShown(true); }
         };
+        const observer = new MutationObserver(sync);
+        observer.observe(pan, { subtree: true, childList: true, attributes: true });
+        const fade = () => { sync(); if (!done) requestAnimationFrame(fade); };
         requestAnimationFrame(fade);
         mount(expBox.current, "expiration");
         mount(cvvBox.current, "cvv");
@@ -310,8 +314,9 @@ export default function Checkout() {
             </a>
           )}
 
-          {withCard && payment?.redirectUrl && (
-            <a className="ck-alt" href={payment.redirectUrl}><Icon name="banknote" /> ¿Prefieres efectivo, transferencia u otro método de tu país? Paga aquí</a>
+          {/* Siempre en su lugar (si apareciera al crearse el pago, empujaría lo de abajo); funciona cuando el pago está listo */}
+          {withCard && (
+            <a className="ck-alt" href={payment?.redirectUrl || "#"} aria-disabled={!payment?.redirectUrl} onClick={(e) => { if (!payment?.redirectUrl) e.preventDefault(); }}><Icon name="banknote" /> ¿Prefieres efectivo, transferencia u otro método de tu país? Paga aquí</a>
           )}
         </form>
 

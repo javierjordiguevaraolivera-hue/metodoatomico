@@ -56,6 +56,7 @@ export default function Checkout() {
   const cardBox = useRef<HTMLDivElement>(null);
   const card = useRef<CardField | null>(null);
   const requested = useRef("");
+  const attempt = useRef(0);
 
   // Los botones "Comprar" de la página disparan este evento (public/landing/runtime.js).
   useEffect(() => {
@@ -79,17 +80,21 @@ export default function Checkout() {
   }, [open, close]);
 
   // Crea el pago al abrir (y de nuevo si cambian de país) y monta el campo de tarjeta.
+  // Cada intento lleva un número: si la persona cierra o cambia de país, el intento anterior se descarta.
+  // (Que el país detectado se escriba en el selector no cuenta como cambio y no corta la carga.)
   useEffect(() => {
-    if (!open || requested.current === (country || "auto")) return;
+    if (!open) { attempt.current++; requested.current = ""; return; }
+    if (requested.current === (country || "auto")) return;
     requested.current = country || "auto";
-    let cancelled = false;
+    const id = ++attempt.current;
+    const stale = () => id !== attempt.current;
     (async () => {
       setLoading(true); setError(""); setCardReady(false); setInstallments([]);
       try {
         const res = await fetch("/api/checkout/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(country ? { country } : {}) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "error");
-        if (cancelled) return;
+        if (stale()) return;
         setPayment(data);
         if (!country) { requested.current = data.country; setCountry(data.country); }
         const docs = COUNTRIES.find((c) => c.code === data.country)?.docs ?? [];
@@ -99,22 +104,24 @@ export default function Checkout() {
         await loadSdk();
         const sdk = window.dlocalGo!;
         await sdk.initialize(SMARTFIELDS_KEY, data.checkoutToken);
-        if (cancelled || !cardBox.current) return;
-        try { card.current?.destroy?.(); } catch {}
+        if (stale() || !cardBox.current) return;
+        // Contenedor nuevo en cada intento: si se vuelve a montar en el mismo (al cambiar de país), dLocal deja el campo vacío.
         cardBox.current.innerHTML = "";
+        const slot = document.createElement("div");
+        cardBox.current.appendChild(slot);
         card.current = sdk.fields().create("card", { style: cardStyle });
-        card.current.mount(cardBox.current);
+        card.current.mount(slot);
         sdk.onInstallmentsChange?.((list) => setInstallments(list && list.length > 1 ? list : []));
         setCardReady(true);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error && err.message !== "error" && err.message !== "sdk" ? err.message : "No pudimos cargar el pago. Revisa tu conexión e intenta de nuevo.");
+        if (stale()) return;
+        setError(err instanceof Error && err.message !== "error" && err.message !== "sdk" ? err.message : "No pudimos cargar el pago. Revisa tu conexión e intenta de nuevo.");
         requested.current = "";
         setCountry((c) => c || DEFAULT_COUNTRY);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!stale()) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
   }, [open, country]);
 
   async function pay(e: FormEvent) {

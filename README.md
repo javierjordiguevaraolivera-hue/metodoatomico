@@ -29,6 +29,8 @@ Cada evento lleva el mismo `event_id` en el píxel y en la API (Meta y TikTok), 
 
 Ver `.env.example`. Para probar en tu compu, cópialo como `.env.local`. En Vercel van en Settings → Environment Variables.
 
+`HOTMART_REDIRECT=true` es el interruptor para volver a mandar el tráfico al link de afiliado de Hotmart (`proxy.ts`). Sin la variable queda la landing. Después de cambiarla hay que hacer redeploy en Vercel.
+
 ## Desarrollo
 
 ```bash

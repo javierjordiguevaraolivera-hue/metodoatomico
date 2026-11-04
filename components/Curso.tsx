@@ -54,13 +54,6 @@ export function Progress({ value, total, label }: { value: number; total: number
 export function Help() {
   return (
     <>
-      <section className="ma-help">
-        <div>
-          <strong>¿Te trabaste?</strong>
-          <span>Primero escribe «doctor» en tu IA: revisa tu compu y arregla lo que falte. Si sigue, escríbenos y te ayudamos hasta que salga tu primer video.</span>
-        </div>
-        <a href="https://ig.me/m/metodoatomico_" target="_blank" rel="noopener" className="ma-help-btn"><Icon name="instagram" /> Escribir por Instagram</a>
-      </section>
       <footer className="ma-foot">
         <a href="/terminos-y-condiciones">Términos y condiciones</a>
         <a href="/garantia-y-reembolsos">Garantía y reembolsos</a>

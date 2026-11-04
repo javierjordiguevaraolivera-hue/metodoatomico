@@ -108,7 +108,6 @@ export const MODULES: Module[] = [
         n: "3.1", title: "Soporte y actualizaciones",
         points: [
           "Si algo falla, primero escribe «doctor»: revisa tu compu y arregla lo que falte.",
-          "Si sigue, escríbenos por Instagram (botón de abajo) y te ayudamos hasta que salga tu primer video.",
           "Las actualizaciones aparecen en esta misma página, sin costo.",
         ],
         cmds: ["doctor"],

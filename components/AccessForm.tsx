@@ -48,7 +48,6 @@ export default function AccessForm({ initialEmail = "" }: { initialEmail?: strin
           <span>Revisa que sea el mismo que usaste al pagar. Si acabas de pagar en efectivo o transferencia, puede tardar unos minutos.</span>
           <span className="ac-alert-links">
             <a href="/">Comprar Método Atómico</a>
-            <a href="https://ig.me/m/metodoatomico_" target="_blank" rel="noopener">Pedir ayuda por Instagram</a>
           </span>
         </div>
       )}

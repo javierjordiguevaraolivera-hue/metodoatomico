@@ -48,7 +48,6 @@ export function welcomeEmail(p: { site: string; email: string; firstName?: strin
       </table>
     </td></tr>
     <tr><td align="center" style="padding:22px 10px 0;font:13px/1.6 Arial,Helvetica,sans-serif;color:#8E82BF">
-      ¿Dudas? Escríbenos por <a href="https://ig.me/m/metodoatomico_" style="color:#2FD39B;text-decoration:underline">Instagram</a>.<br>
       Este correo se envía desde una dirección que no recibe respuestas.<br>
       <a href="${p.site}" style="color:#8E82BF">metodoatomico.lat</a>
     </td></tr>
@@ -67,8 +66,6 @@ export function welcomeEmail(p: { site: string; email: string; firstName?: strin
     "2. Descarga el ZIP de Método Atómico y descomprímelo.",
     "3. En la app de escritorio de Claude o ChatGPT, abre la carpeta y escribe «configúrame».",
     "4. Escribe un tema en una frase y tu IA hace el video.",
-    "",
-    "¿Dudas? Escríbenos por Instagram: https://ig.me/m/metodoatomico_",
   ].join("\n");
 
   return { subject: "Tu acceso a Método Atómico ya está listo", html, text };

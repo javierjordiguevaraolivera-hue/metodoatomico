@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { CURRENCY, META_PIXEL_ID, PRICE_USD, PRODUCT_NAME, TIKTOK_PIXEL_ID } from "@/lib/config";
-import { loadMetaPixel, loadTikTokPixel, track, trackPageView, trackTikTok, visitorId } from "@/lib/track-client";
+import { geoCountryCode, loadMetaPixel, loadTikTokPixel, track, trackPageView, trackTikTok, visitorId } from "@/lib/track-client";
 
 type Purchase = { eventId: string; value: number; currency: string };
 type UserData = { em?: string; fn?: string; ln?: string; country?: string };
@@ -26,7 +26,7 @@ export default function Pixels({ viewContentOnScroll = false, purchase, userData
     // El ttclid del anuncio de TikTok se guarda para mandarlo en los eventos de después (checkout, compra).
     const ttclid = new URLSearchParams(location.search).get("ttclid");
     if (ttclid) document.cookie = `ma_ttclid=${encodeURIComponent(ttclid)}; Max-Age=${60 * 60 * 24 * 30}; Path=/; SameSite=Lax`;
-    loadMetaPixel(META_PIXEL_ID, { external_id: vid, ...userData });
+    loadMetaPixel(META_PIXEL_ID, { external_id: vid, country: geoCountryCode(), ...userData });
     loadTikTokPixel(TIKTOK_PIXEL_ID, { email: userData.em, external_id: vid });
     trackPageView();
 

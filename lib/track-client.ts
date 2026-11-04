@@ -64,7 +64,21 @@ export function loadTikTokPixel(pixelId: string, userData: { email?: string; ext
 }
 
 // Nombres de TikTok para los mismos eventos de Meta.
-const TIKTOK_NAMES: Record<string, string> = { ViewContent: "ViewContent", InitiateCheckout: "InitiateCheckout", Purchase: "CompletePayment" };
+const TIKTOK_NAMES: Record<string, string> = { ViewContent: "ViewContent", InitiateCheckout: "InitiateCheckout", AddPaymentInfo: "AddPaymentInfo", Purchase: "CompletePayment" };
+
+// País que detectó Vercel por la IP (proxy.ts lo deja en la cookie ma_country).
+export function geoCountryCode() {
+  return document.cookie.match(/(?:^|; )ma_country=([A-Za-z]{2})/)?.[1]?.toLowerCase();
+}
+
+export type Buyer = { email?: string; firstName?: string; lastName?: string; country?: string };
+
+// Cuando la persona escribe sus datos: el píxel de Meta los suma al advanced matching (los hashea él) y TikTok también.
+export function identify(pixelId: string, b: Buyer) {
+  const em = b.email?.trim().toLowerCase();
+  window.fbq?.("init", pixelId, defined({ external_id: visitorId(), em, fn: b.firstName?.trim().toLowerCase(), ln: b.lastName?.trim().toLowerCase(), country: (b.country || geoCountryCode())?.toLowerCase() }));
+  window.ttq?.identify(defined({ email: em, external_id: visitorId() }));
+}
 
 function tiktokData(d: Record<string, unknown>) {
   return {
@@ -86,19 +100,19 @@ export function trackPageView() {
 }
 
 // Purchase no se manda desde aquí: lo envía el servidor al confirmar el pago.
-export function track(name: "ViewContent" | "InitiateCheckout", customData: Record<string, unknown> = {}) {
+export function track(name: "ViewContent" | "InitiateCheckout" | "AddPaymentInfo", customData: Record<string, unknown> = {}, buyer?: Buyer) {
   const id = newEventId(name.toLowerCase());
   window.fbq?.("track", name, customData, { eventID: id });
   trackTikTok(name, customData, id);
-  sendToCapi(name, id, customData);
+  sendToCapi(name, id, customData, buyer);
   return id;
 }
 
-function sendToCapi(name: string, id: string, customData: Record<string, unknown>) {
+function sendToCapi(name: string, id: string, customData: Record<string, unknown>, buyer?: Buyer) {
   fetch("/api/track", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name, id, url: location.href, customData }),
+    body: JSON.stringify({ name, id, url: location.href, customData, buyer }),
     keepalive: true,
   }).catch(() => {});
 }

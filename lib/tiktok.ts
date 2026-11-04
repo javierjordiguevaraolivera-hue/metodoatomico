@@ -6,7 +6,7 @@ import type { Person } from "./meta";
 const sha256 = (v?: string) => (v ? crypto.createHash("sha256").update(v.trim().toLowerCase()).digest("hex") : undefined);
 
 export async function sendTikTokEvent(e: {
-  name: "ViewContent" | "InitiateCheckout" | "CompletePayment";
+  name: "ViewContent" | "InitiateCheckout" | "AddPaymentInfo" | "CompletePayment";
   id: string;
   sourceUrl?: string;
   person: Person;

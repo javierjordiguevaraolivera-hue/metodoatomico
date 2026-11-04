@@ -5,7 +5,8 @@ import { sendTikTokEvent } from "@/lib/tiktok";
 
 // Copia en la CAPI de los eventos que el navegador manda al píxel.
 // Purchase no entra por aquí: lo dispara el servidor solo cuando dLocal Go confirma el pago.
-const ALLOWED = new Set(["PageView", "ViewContent", "InitiateCheckout"]);
+const ALLOWED = new Set(["PageView", "ViewContent", "InitiateCheckout", "AddPaymentInfo"]);
+const text = (v: unknown, max = 200) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : undefined);
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -14,6 +15,11 @@ export async function POST(req: Request) {
   }
   const url = typeof body.url === "string" ? body.url.slice(0, 2000) : undefined;
   const person = await personFromRequest(url);
+  // Datos que la persona escribió en el checkout (AddPaymentInfo): se suman al advanced matching.
+  const b = typeof body.buyer === "object" && body.buyer ? body.buyer : {};
+  person.email = text(b.email)?.toLowerCase() || person.email;
+  person.firstName = text(b.firstName) || person.firstName;
+  person.lastName = text(b.lastName) || person.lastName;
   await Promise.all([
     sendMetaEvent({
       name: body.name,

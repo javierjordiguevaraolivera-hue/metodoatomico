@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { CURRENCY, DLOCALGO_LIVE, DLOCALGO_SDK_URL, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
+import { CURRENCY, DLOCALGO_LIVE, DLOCALGO_SDK_URL, META_PIXEL_ID, PRICE_USD, PRODUCT_NAME } from "@/lib/config";
 import { COUNTRIES, DEFAULT_COUNTRY, docExample, isCountry } from "@/lib/countries";
-import { track } from "@/lib/track-client";
+import { identify, track } from "@/lib/track-client";
 import Icon from "./Icon";
 
 // Checkout de dLocal Go dentro de la página. La tarjeta se escribe en el campo seguro de dLocal
@@ -246,6 +246,9 @@ export default function Checkout() {
     // El botón se ve activo desde el inicio (si cambiara al cargar se notaría); antes de que cargue la tarjeta no hace nada.
     if (!cardReady || !payment?.checkoutToken || !card.current || paying) return;
     setPaying(true); setError("");
+    const buyer = { email: form.email, firstName: form.firstName, lastName: form.lastName, country: payment.country };
+    identify(META_PIXEL_ID, buyer);
+    track("AddPaymentInfo", { value: PRICE_USD, currency: CURRENCY, content_name: PRODUCT_NAME, content_type: "product" }, buyer);
     try {
       const { token } = await window.dlocalGo!.createCardToken(card.current, { name: `${form.firstName} ${form.lastName}`.trim() });
       const res = await fetch("/api/checkout/confirm", {

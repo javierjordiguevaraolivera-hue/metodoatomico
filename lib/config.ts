@@ -4,7 +4,7 @@ export const PRODUCT_NAME = "Método Atómico";
 export const PRICE_USD = 25;
 export const CURRENCY = "USD";
 
-export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "1066777946382851";
+export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "28161017416906832";
 // TikTok: píxel + Events API (TIKTOK_ACCESS_TOKEN)
 export const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || "DBKUCKRC77U4VUSMEKA0";
 

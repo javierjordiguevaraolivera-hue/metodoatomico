@@ -72,8 +72,12 @@ export async function sendMetaEvent(e: {
   sourceUrl?: string;
   person: Person;
   customData?: Record<string, unknown>;
+  /** Solo /us e /india: su propio píxel y token. Sin esto se usa el de la página principal. */
+  pixel?: { id: string; token: string };
 }) {
-  const token = process.env.META_CAPI_TOKEN;
+  const token = e.pixel ? e.pixel.token : process.env.META_CAPI_TOKEN;
+  const pixelId = e.pixel ? e.pixel.id : META_PIXEL_ID;
+  if (!pixelId) return { skipped: "sin píxel" };
   if (!token) return { skipped: "sin META_CAPI_TOKEN" };
   const p = e.person;
   const user_data = {
@@ -103,7 +107,7 @@ export async function sendMetaEvent(e: {
     test_event_code: process.env.META_TEST_EVENT_CODE || undefined,
   };
   try {
-    const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${META_PIXEL_ID}/events?access_token=${encodeURIComponent(token)}`, {
+    const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${pixelId}/events?access_token=${encodeURIComponent(token)}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),

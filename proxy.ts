@@ -7,7 +7,7 @@ const HOTMART_URL = "https://go.hotmart.com/N108193402G"; // exacto, sin slash f
 
 // Aunque redirija, esto sigue funcionando: compradores que ya pagaron y el webhook de dLocal
 // (un pago en efectivo puede confirmarse días después).
-const KEEP = ["/acceso", "/mis-accesos", "/gracias"];
+const KEEP = ["/acceso", "/mis-accesos", "/gracias", "/us", "/india"]; // /us e /india cobran con Whop: nunca van a Hotmart
 
 export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;

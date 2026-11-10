@@ -13,13 +13,16 @@ export async function sendTikTokEvent(e: {
   value: number;
   currency: string;
   contentName: string;
+  /** Solo /us e /india: su propio píxel y token. */
+  pixel?: { id: string; token: string };
 }) {
-  const token = process.env.TIKTOK_ACCESS_TOKEN;
+  const token = e.pixel ? e.pixel.token : process.env.TIKTOK_ACCESS_TOKEN;
+  if (e.pixel && !e.pixel.id) return { skipped: "sin píxel" };
   if (!token) return { skipped: "sin TIKTOK_ACCESS_TOKEN" };
   const p = e.person;
   const body = {
     event_source: "web",
-    event_source_id: TIKTOK_PIXEL_ID,
+    event_source_id: e.pixel ? e.pixel.id : TIKTOK_PIXEL_ID,
     test_event_code: process.env.TIKTOK_TEST_EVENT_CODE || undefined,
     data: [{
       event: e.name,

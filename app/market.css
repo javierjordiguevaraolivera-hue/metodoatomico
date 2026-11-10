@@ -1,0 +1,23 @@
+/* Solo /us e /india (clases nuevas: no tocan la página principal). */
+.mk-india, .mk-india * { font-family: "Noto Sans Devanagari", Inter, system-ui, sans-serif; }
+
+.ck-panel.wc-panel { display: flex; flex-direction: column; gap: 14px; }
+@media (min-width: 700px) { .ck-panel.wc-panel { width: 560px; max-width: 560px; } }
+.wc-body { padding: 0; }
+.wc-frame { min-height: 120px; }
+.wc-msg { display: flex; align-items: center; gap: 10px; padding: 18px 0; color: #D2C9EE; font-size: 15px; line-height: 1.5; }
+.wc-fine { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 14px 0 0; color: #9A8FC4; font-size: 13px; }
+
+.mk-thanks { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; background: #0E1013; color: #ECEDEE; }
+.mk-thanks-card { width: 100%; max-width: 520px; text-align: center; background: #16191D; border: 1px solid #262B31; border-radius: 22px; padding: 34px 26px; }
+.mk-thanks-card img.mk-logo { width: 160px; height: auto; margin: 0 auto 18px; display: block; }
+.mk-thanks-card h1 { font: 800 30px/1.2 "Bricolage Grotesque", Inter, sans-serif; margin: 6px 0 12px; }
+.mk-india .mk-thanks-card h1 { font-family: "Noto Sans Devanagari", sans-serif; }
+.mk-thanks-card p { color: #B9BEC4; font-size: 16px; line-height: 1.55; margin: 0 0 14px; }
+.mk-thanks-card .mk-mail { color: #ECEDEE; font-weight: 600; word-break: break-all; }
+.mk-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 26px; border-radius: 14px; background: #119564; color: #fff; font-weight: 700; font-size: 16px; text-decoration: none; border: 0; cursor: pointer; }
+.mk-btn-ghost { background: transparent; border: 1px solid #353B42; color: #ECEDEE; }
+.mk-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 18px 0 8px; }
+.mk-fine { font-size: 13px !important; color: #8A9198 !important; }
+/* /us no tiene video de bienvenida en inglés: se oculta el botón que lo abre. */
+.mk-us [data-action="replay"] { display: none !important; }

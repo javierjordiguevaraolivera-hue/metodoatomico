@@ -1,6 +1,6 @@
 // Correos transaccionales por la API de Brevo (https://developers.brevo.com/reference/sendtransacemail).
 
-export async function sendEmail(m: { to: string; name?: string; subject: string; html: string; text: string }) {
+export async function sendEmail(m: { to: string; name?: string; subject: string; html: string; text: string; senderName?: string }) {
   const key = process.env.BREVO_API_KEY;
   const sender = process.env.BREVO_SENDER_EMAIL;
   if (!key || !sender) throw new Error("Faltan BREVO_API_KEY o BREVO_SENDER_EMAIL");
@@ -8,7 +8,7 @@ export async function sendEmail(m: { to: string; name?: string; subject: string;
     method: "POST",
     headers: { "api-key": key, "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({
-      sender: { email: sender, name: process.env.BREVO_SENDER_NAME || "Método Atómico" },
+      sender: { email: sender, name: m.senderName || process.env.BREVO_SENDER_NAME || "Método Atómico" },
       to: [{ email: m.to, ...(m.name ? { name: m.name } : {}) }],
       subject: m.subject,
       htmlContent: m.html,

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import MarketAccessForm from "@/components/MarketAccessForm";
-import { getMarket, t } from "@/lib/markets";
+import HtmlLang from "@/components/HtmlLang";
+import { requestMarket } from "@/lib/market-request";
+import { t } from "@/lib/markets";
 import { currentSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -12,15 +14,16 @@ export default async function Login({ params, searchParams }: {
   params: Promise<{ market: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const m = getMarket((await params).market);
+  const q = await searchParams;
+  const m = await requestMarket((await params).market, q.lang);
   if (!m) notFound();
   if (await currentSession()) redirect(`/${m.id}/members`);
-  const q = await searchParams;
   const email = typeof q.email === "string" ? q.email.slice(0, 200) : "";
   const d = t(m).access;
 
   return (
-    <main className="ac-page">
+    <main className="ac-page" lang={m.lang}>
+      <HtmlLang lang={m.lang} />
       <div className="ac-glow" aria-hidden="true" />
       <section className="ac-card">
         <a href={`/${m.id}`} className="ac-logo"><img src="/brand/atomic-method-logo.png" alt={m.brand} width={170} height={47} /></a>

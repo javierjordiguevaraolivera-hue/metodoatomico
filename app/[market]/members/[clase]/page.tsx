@@ -6,25 +6,27 @@ import { MarketFileRow, MarketFooter, MarketTopBar } from "@/components/MarketCu
 import MarketLessonDone from "@/components/MarketLessonDone";
 import { loadMarketBuyer } from "@/lib/buyer-market";
 import { courseFor } from "@/lib/curso-market";
-import { getMarket, t } from "@/lib/markets";
+import HtmlLang from "@/components/HtmlLang";
+import { requestMarket } from "@/lib/market-request";
+import { t } from "@/lib/markets";
 
 export const dynamic = "force-dynamic";
 
-type P = { params: Promise<{ market: string; clase: string }> };
+type P = { params: Promise<{ market: string; clase: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-export async function generateMetadata({ params }: P): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: P): Promise<Metadata> {
   const { market, clase } = await params;
-  const m = getMarket(market);
-  const l = m ? courseFor(m.id).findLesson(clase) : null;
+  const m = await requestMarket(market, (await searchParams).lang);
+  const l = m ? courseFor(m).findLesson(clase) : null;
   return { title: `${l ? `${l.n} ${l.title}` : "Lesson"} · Atomic Method`, robots: { index: false } };
 }
 
 // Una clase del curso de /us e /india: contenido, archivos, botón de completada y anterior/siguiente.
-export default async function Lesson({ params }: P) {
+export default async function Lesson({ params, searchParams }: P) {
   const { market, clase } = await params;
-  const m = getMarket(market);
+  const m = await requestMarket(market, (await searchParams).lang);
   if (!m) notFound();
-  const { LESSONS, findLesson } = courseFor(m.id);
+  const { LESSONS, findLesson } = courseFor(m);
   const lesson = findLesson(clase);
   if (!lesson) notFound();
   const d = t(m).members;
@@ -38,7 +40,8 @@ export default async function Lesson({ params }: P) {
   const base = `/${m.id}/members`;
 
   return (
-    <main className="ma-page ma-page-lesson">
+    <main className="ma-page ma-page-lesson" lang={m.lang}>
+      <HtmlLang lang={m.lang} />
       <MarketTopBar market={m} back />
 
       <div className="ma-lessonlayout">

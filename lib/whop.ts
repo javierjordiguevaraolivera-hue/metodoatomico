@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { sendEmail } from "./brevo";
 import { marketWelcomeEmail } from "./emails-market";
-import { MARKETS, type Market, type MarketId, serverKeys } from "./markets";
+import { localize, MARKETS, type Market, type MarketId, serverKeys } from "./markets";
 import { type Person, sendMetaEvent } from "./meta";
 import { claimWelcome, releaseWelcome, saveCustomer, saveOrder } from "./supabase";
 import { sendTikTokEvent } from "./tiktok";
@@ -51,9 +51,12 @@ export function verifyWhopWebhook(raw: string, h: Headers) {
 
 // Mercado de un pago: por la metadata que pone nuestro checkout o, si falta, por el plan.
 export function marketOfPayment(p: WhopPayment): Market | null {
+  // El idioma en el que compró (lo manda nuestro checkout) decide el idioma del correo de bienvenida.
+  const lang = p.metadata?.lang;
   const m = p.metadata?.market;
-  if (m && m in MARKETS) return MARKETS[m as MarketId];
-  return Object.values(MARKETS).find((x) => x.whopPlan && x.whopPlan === p.variant_id) ?? null;
+  if (m && m in MARKETS) return localize(MARKETS[m as MarketId], lang);
+  const byPlan = Object.values(MARKETS).find((x) => x.whopPlan && x.whopPlan === p.variant_id);
+  return byPlan ? localize(byPlan, lang) : null;
 }
 
 const splitName = (full?: string | null) => {

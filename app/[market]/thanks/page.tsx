@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import MarketPixels from "@/components/MarketPixels";
-import { getMarket, t } from "@/lib/markets";
+import HtmlLang from "@/components/HtmlLang";
+import { requestMarket } from "@/lib/market-request";
+import { t } from "@/lib/markets";
 import { personFromRequest } from "@/lib/meta";
 import { getWhopPayment, recordWhopPayment, trackWhopPurchase, type WhopPayment } from "@/lib/whop";
 
@@ -13,10 +15,10 @@ export default async function Thanks({ params, searchParams }: {
   params: Promise<{ market: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const m = getMarket((await params).market);
+  const q = await searchParams;
+  const m = await requestMarket((await params).market, q.lang);
   if (!m) notFound();
   const d = t(m).thanks;
-  const q = await searchParams;
   const id = typeof q.payment === "string" ? q.payment : "";
   const payment: WhopPayment | null = id ? await getWhopPayment(id).catch((err) => { console.error("thanks: Whop", err); return null; }) : null;
   const paid = payment?.status === "paid";
@@ -32,7 +34,8 @@ export default async function Thanks({ params, searchParams }: {
   const failed = !paid && (q.status === "failed" || q.status === "canceled");
 
   return (
-    <main className="mk-thanks">
+    <main className="mk-thanks" lang={m.lang}>
+      <HtmlLang lang={m.lang} />
       {paid && (
         <MarketPixels
           market={m}

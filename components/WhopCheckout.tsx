@@ -61,7 +61,7 @@ export default function WhopCheckout({ market }: { market: Market }) {
         const thanks = `${location.origin}/${market.id}/thanks`;
         const h = window.WhopElements({ appearance: { theme: { appearance: "dark", accentColor: "green" } } }).checkout.create({
           plan: market.whopPlan,
-          metadata: attributionMetadata(market),
+          metadata: { ...attributionMetadata(market), lang: market.lang },
           returnUrl: thanks,
           locale: market.lang,
           onComplete: (r: { result: string; paymentId?: string }) => {

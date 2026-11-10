@@ -5,7 +5,9 @@ import Icon from "@/components/Icon";
 import { MarketFileRow, MarketFooter, MarketTopBar } from "@/components/MarketCurso";
 import { loadMarketBuyer } from "@/lib/buyer-market";
 import { courseFor } from "@/lib/curso-market";
-import { getMarket, t } from "@/lib/markets";
+import HtmlLang from "@/components/HtmlLang";
+import { requestMarket } from "@/lib/market-request";
+import { t } from "@/lib/markets";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My access · Atomic Method", robots: { index: false } };
@@ -13,11 +15,11 @@ export const metadata: Metadata = { title: "My access · Atomic Method", robots:
 const label = (name: string) => name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ");
 
 // Panel del curso de /us e /india: avance total, la clase que sigue y los módulos (mismo diseño que /mis-accesos).
-export default async function Members({ params }: { params: Promise<{ market: string }> }) {
-  const m = getMarket((await params).market);
+export default async function Members({ params, searchParams }: { params: Promise<{ market: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const m = await requestMarket((await params).market, (await searchParams).lang);
   if (!m) notFound();
   const d = t(m).members;
-  const { LESSONS, MODULES, COURSE_FILES } = courseFor(m.id);
+  const { LESSONS, MODULES, COURSE_FILES } = courseFor(m);
   const { session, name, files, done } = await loadMarketBuyer(m);
   const count = (lessons: typeof LESSONS) => lessons.filter((l) => done.has(l.slug)).length;
   const total = LESSONS.length;
@@ -28,7 +30,8 @@ export default async function Members({ params }: { params: Promise<{ market: st
   const left = minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60} min` : `${minutes} min`;
 
   return (
-    <main className="ma-page">
+    <main className="ma-page" lang={m.lang}>
+      <HtmlLang lang={m.lang} />
       <MarketTopBar market={m} />
 
       <section className="ma-hero">

@@ -5,12 +5,15 @@ import { notFound } from "next/navigation";
 import Script from "next/script";
 import MarketPixels from "@/components/MarketPixels";
 import WhopCheckout from "@/components/WhopCheckout";
-import { getMarket } from "@/lib/markets";
+import HtmlLang from "@/components/HtmlLang";
+import { requestMarket } from "@/lib/market-request";
 
-// Landing de /us (inglés) o /india (hindi): la misma landing traducida (content/landing-<mercado>.html),
+// Landing de /us (inglés o español) o /india (hindi o inglés): la landing traducida (content/landing-<variant>.html),
 // con sus scripts traducidos y el checkout de Whop.
-export async function generateMetadata({ params }: { params: Promise<{ market: string }> }): Promise<Metadata> {
-  const m = getMarket((await params).market);
+type P = { params: Promise<{ market: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+export async function generateMetadata({ params, searchParams }: P): Promise<Metadata> {
+  const m = await requestMarket((await params).market, (await searchParams).lang);
   if (!m) return {};
   return {
     title: m.title,
@@ -20,17 +23,18 @@ export async function generateMetadata({ params }: { params: Promise<{ market: s
   };
 }
 
-export default async function MarketHome({ params }: { params: Promise<{ market: string }> }) {
-  const m = getMarket((await params).market);
+export default async function MarketHome({ params, searchParams }: P) {
+  const m = await requestMarket((await params).market, (await searchParams).lang);
   if (!m) notFound();
-  const landing = fs.readFileSync(path.join(process.cwd(), "content", `landing-${m.id}.html`), "utf8");
+  const landing = fs.readFileSync(path.join(process.cwd(), "content", `landing-${m.variant}.html`), "utf8");
   return (
-    <>
+    <div lang={m.lang}>
+      <HtmlLang lang={m.lang} />
       <div dangerouslySetInnerHTML={{ __html: landing }} />
       <WhopCheckout market={m} />
       <MarketPixels market={m} viewContentOnScroll />
-      <Script src={`/landing/${m.id}/runtime.js`} strategy="afterInteractive" />
-      <Script src={`/landing/${m.id}/fx.js`} type="module" strategy="afterInteractive" />
-    </>
+      <Script src={`/landing/${m.variant}/runtime.js`} strategy="afterInteractive" />
+      <Script src={`/landing/${m.variant}/fx.js`} type="module" strategy="afterInteractive" />
+    </div>
   );
 }

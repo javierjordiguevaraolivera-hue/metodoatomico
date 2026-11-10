@@ -1,11 +1,17 @@
-// Mercados nuevos con Whop: /us (inglés) y /india (hindi). La página principal (/) sigue con dLocal Go
-// y no usa nada de este archivo. Comparten Supabase (mismas tablas) con la página principal.
+// Mercados nuevos con Whop: /us (inglés o español) e /india (hindi o inglés), según el idioma del navegador.
+// La página principal (/) sigue con dLocal Go y no usa nada de este archivo. Comparten Supabase con ella.
 
 export type MarketId = "us" | "india";
+export type Lang = "en" | "hi" | "es";
 
 export type Market = {
   id: MarketId;
-  lang: "en" | "hi";
+  /** Idioma con el que se muestra esta vez (lo elige localize según el navegador). */
+  lang: Lang;
+  /** Idiomas del mercado: el primero es el que se usa si el navegador no pide otro de la lista. */
+  langs: Lang[];
+  /** Carpeta de contenido de este idioma: landing-<variant>.html, /landing/<variant>/, content/legal/<variant>/. */
+  variant: string;
   brand: string;
   /** Lo que se ve en la página. El cobro real lo define el plan de Whop. */
   priceLabel: string;
@@ -21,11 +27,25 @@ export type Market = {
   description: string;
 };
 
+type Copy = { variant: string; title: string; description: string };
+const COPY: Record<MarketId, Partial<Record<Lang, Copy>>> = {
+  us: {
+    en: { variant: "us", title: "Atomic Method · Your AI makes your viral videos", description: "Open Atomic Method in Claude or ChatGPT and create viral reels without filming or editing. One-time payment, lifetime access." },
+    es: { variant: "us-es", title: "Atomic Method · Tu IA hace tus videos virales", description: "Abre Atomic Method en Claude o ChatGPT y crea reels virales sin grabarte ni editar. Pago único, acceso de por vida." },
+  },
+  india: {
+    hi: { variant: "india", title: "Atomic Method · आपका AI बनाए आपके viral videos", description: "Claude या ChatGPT में Atomic Method खोलें और बिना shoot या edit किए viral reels बनाएं। एक बार payment, हमेशा के लिए access." },
+    en: { variant: "india-en", title: "Atomic Method · Your AI makes your viral videos", description: "Open Atomic Method in Claude or ChatGPT and create viral reels without filming or editing. One-time payment, lifetime access." },
+  },
+};
+
 // NEXT_PUBLIC_* se lee en el navegador: hay que escribir cada nombre completo (Next lo reemplaza al compilar).
 export const MARKETS: Record<MarketId, Market> = {
   us: {
     id: "us",
     lang: "en",
+    langs: ["en", "es"],
+    variant: "us",
     brand: "Atomic Method",
     priceLabel: "$25",
     price: 25,
@@ -40,7 +60,9 @@ export const MARKETS: Record<MarketId, Market> = {
   },
   india: {
     id: "india",
-    lang: "hi",
+    lang: "en",
+    langs: ["en", "hi"],
+    variant: "india-en",
     brand: "Atomic Method",
     priceLabel: "₹1,299",
     price: 1299,
@@ -50,13 +72,36 @@ export const MARKETS: Record<MarketId, Market> = {
     metaPixel: process.env.NEXT_PUBLIC_META_PIXEL_ID_INDIA || "",
     tiktokPixel: process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID_INDIA || "",
     ogImage: "/brand/portada-atomic-method-horizontal.png",
-    title: "Atomic Method · आपका AI बनाए आपके viral videos",
-    description: "Claude या ChatGPT में Atomic Method खोलें और बिना shoot या edit किए viral reels बनाएं। एक बार payment, हमेशा के लिए access.",
+    title: "Atomic Method · Your AI makes your viral videos",
+    description: "Open Atomic Method in Claude or ChatGPT and create viral reels without filming or editing. One-time payment, lifetime access.",
   },
 };
 
 export const MARKET_IDS = Object.keys(MARKETS) as MarketId[];
 export const getMarket = (id: string) => (id in MARKETS ? MARKETS[id as MarketId] : null);
+
+/** El mercado en un idioma suyo (si no es suyo, en el de por defecto). */
+export function localize(m: Market, lang?: string | null): Market {
+  const l = (lang && (m.langs as string[]).includes(lang) ? lang : m.langs[0]) as Lang;
+  const c = COPY[m.id][l]!;
+  return { ...m, lang: l, variant: c.variant, title: c.title, description: c.description };
+}
+
+/** Idioma preferido del navegador entre los del mercado (cabecera Accept-Language, respetando el orden y los q=). */
+export function pickLang(m: Market, acceptLanguage: string | null | undefined): Lang {
+  const prefs = (acceptLanguage ?? "")
+    .split(",")
+    .map((part, i) => {
+      const [tag, ...params] = part.trim().toLowerCase().split(";");
+      const q = Number(params.find((p) => p.trim().startsWith("q="))?.split("=")[1] ?? 1);
+      return { base: tag.split("-")[0], q: Number.isFinite(q) ? q : 0, i };
+    })
+    .filter((p) => p.base && p.q > 0)
+    .sort((a, b) => b.q - a.q || a.i - b.i);
+  // Solo cuenta el idioma principal del navegador: si es el segundo idioma del mercado, se usa ese; si no, el de por defecto.
+  const first = prefs[0]?.base;
+  return (first && (m.langs as string[]).includes(first) ? first : m.langs[0]) as Lang;
+}
 
 /** Mercado de una venta guardada en Supabase a partir de su order_id ("us_…", "india_…"). */
 export const marketFromOrderId = (orderId: string | null | undefined): Market | null => {
@@ -273,5 +318,102 @@ const HI: Dict = {
   },
 };
 
-export const DICTS: Record<Market["lang"], Dict> = { en: EN, hi: HI };
+const ES: Dict = {
+  legal: { "terms-and-conditions": "Términos y condiciones", "refund-policy": "Garantía y reembolsos", terms: "Términos", privacy: "Privacidad" },
+  back: "← Volver",
+  checkout: {
+    secure: "Pago seguro",
+    oneTime: "Pago único",
+    lifetime: "Acceso de por vida",
+    instant: "Acceso inmediato a tu correo",
+    guarantee: "Garantía de 7 días",
+    close: "Cerrar",
+    loading: "Cargando el pago seguro…",
+    soon: "El pago se está configurando. Intenta de nuevo en unos minutos.",
+    failed: "No pudimos cargar el pago. Revisa tu conexión e intenta de nuevo.",
+    poweredBy: "Pago procesado de forma segura por Whop.",
+  },
+  thanks: {
+    title: "¡Ya es tuyo! 🎉",
+    paid: "Tu pago está confirmado. Te acabamos de enviar tu acceso por correo.",
+    sentTo: "Enviado a",
+    cta: "Entrar a mi acceso →",
+    pendingTitle: "Estamos confirmando tu pago",
+    pending: "Suele tardar unos segundos. Te llega un correo apenas se confirme. Puedes recargar esta página.",
+    unknownTitle: "No encontramos tu pago",
+    unknown: "Si ya pagaste, revisa tu correo o entra con el correo con el que pagaste.",
+    refresh: "Recargar",
+    login: "Entrar",
+    spam: "¿No lo ves? Revisa la carpeta de Spam o Promociones.",
+  },
+  access: {
+    kicker: "Acceso de compradores",
+    title: (brand: string) => <>Entra a tu <span>{brand}</span></>,
+    sub: "Escribe el correo con el que pagaste y entras directo a la guía y a tus descargas.",
+    label: "Correo con el que compraste",
+    placeholder: "tucorreo@gmail.com",
+    enter: "Entrar a mi acceso",
+    checking: "Revisando",
+    invalid: "Escribe un correo válido.",
+    notFoundTitle: "No encontramos una compra con ese correo.",
+    notFound: "Revisa que sea el mismo que usaste al pagar. Si acabas de pagar, puede tardar un minuto.",
+    buy: (brand: string) => `Comprar ${brand}`,
+    error: "No pudimos revisar tu acceso. Intenta de nuevo en un momento.",
+    offline: "Revisa tu conexión e intenta de nuevo.",
+    session: "Tu sesión dura 2 horas. Después vuelves a entrar con tu correo.",
+    notYet: "¿Todavía no lo tienes?",
+    discover: (brand: string) => `Conoce ${brand}`,
+  },
+  members: {
+    kicker: "Tu acceso",
+    hello: (name: string) => (name ? `¡Hola, ${name}!` : "¡Hola!"),
+    welcome: "Bienvenido a",
+    signedAs: "Entraste como",
+    finished: "¡Terminaste el curso!",
+    progress: (pct: number) => `Llevas ${pct} % del curso`,
+    courseProgress: "Avance del curso",
+    continueWith: "Continúa con",
+    startWith: "Empieza con",
+    expires: (t: string) => `Tu sesión vence en ${t}. Después vuelves a entrar con tu correo.`,
+    modules: "Tus módulos",
+    module: "Módulo",
+    moduleProgress: (n: number) => `Avance del módulo ${n}`,
+    done: "Completada",
+    pending: "Pendiente",
+    moreFiles: "Más archivos",
+    backToAccess: "← Mis accesos",
+    logout: "Salir",
+    download: "Descargar",
+    soon: "Muy pronto",
+    askAi: "Escríbele a tu IA",
+    files: "Archivos de esta clase",
+    prev: "Anterior",
+    next: "Siguiente",
+    markDone: "Marcar como completada",
+    isDone: "Clase completada",
+    saveError: "No pudimos guardar tu avance. Intenta de nuevo.",
+    lesson: "Clases",
+    tags: { "Empieza aquí": "Empieza aquí", Obligatorio: "Obligatorio", Opcional: "Opcional", Bonus: "Bonus" },
+  },
+  email: {
+    subject: (brand: string) => `Tu acceso a ${brand} ya está listo`,
+    preheader: "Tu compra está confirmada. Entra con tu correo y descarga todo.",
+    kicker: "Compra confirmada",
+    hello: (name?: string) => (name ? `¡Hola, ${name}!` : "¡Hola!"),
+    yours: "Ya es tuyo.",
+    thanks: (brand: string) => `Gracias por comprar <strong style="color:#F7F4FF">${brand}</strong>. Todo está listo para que hagas tu primer video viral con tu IA.`,
+    cta: "Entrar a mi acceso →",
+    with: "Entras con este correo:",
+    start: "Así empiezas",
+    steps: [
+      ["Entra a tu acceso", "Pon tu correo y listo. La sesión dura 2 horas; después vuelves a entrar igual."],
+      ["Descarga la carpeta", "Descarga el ZIP del sistema y los 2 ejemplos desde tu acceso."],
+      ["Ábrela en tu IA", "En la app de escritorio de Claude o ChatGPT, abre la carpeta y escribe «configúrame»."],
+      ["Haz tu primer video", "Escribe un tema en una frase. Tu IA hace el guion, los dibujos, la voz y los subtítulos."],
+    ],
+    noReply: "Este correo se envía desde una dirección que no recibe respuestas.",
+  },
+};
+
+export const DICTS: Record<Lang, Dict> = { en: EN, hi: HI, es: ES };
 export const t = (m: Market) => DICTS[m.lang];

@@ -3,29 +3,32 @@ import path from "node:path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import MarketPixels from "@/components/MarketPixels";
-import { getMarket, LEGAL_SLUGS, type LegalSlug, MARKET_IDS, t } from "@/lib/markets";
+import HtmlLang from "@/components/HtmlLang";
+import { requestMarket } from "@/lib/market-request";
+import { LEGAL_SLUGS, type LegalSlug, MARKET_IDS, t } from "@/lib/markets";
 
 // Páginas legales de /us e /india: el texto vive en content/legal/<mercado>/<slug>.html.
 export const dynamicParams = false;
 export const generateStaticParams = () => MARKET_IDS.flatMap((market) => LEGAL_SLUGS.map((legal) => ({ market, legal })));
 
-type P = { params: Promise<{ market: string; legal: string }> };
+type P = { params: Promise<{ market: string; legal: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 const isLegal = (s: string): s is LegalSlug => (LEGAL_SLUGS as readonly string[]).includes(s);
 
-export async function generateMetadata({ params }: P): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: P): Promise<Metadata> {
   const { market, legal } = await params;
-  const m = getMarket(market);
+  const m = await requestMarket(market, (await searchParams).lang);
   return { title: m && isLegal(legal) ? `${t(m).legal[legal]} · ${m.brand}` : "Atomic Method" };
 }
 
-export default async function Legal({ params }: P) {
+export default async function Legal({ params, searchParams }: P) {
   const { market, legal } = await params;
-  const m = getMarket(market);
+  const m = await requestMarket(market, (await searchParams).lang);
   if (!m || !isLegal(legal)) notFound();
   const d = t(m);
-  const html = fs.readFileSync(path.join(process.cwd(), "content", "legal", m.id, `${legal}.html`), "utf8");
+  const html = fs.readFileSync(path.join(process.cwd(), "content", "legal", m.variant, `${legal}.html`), "utf8");
   return (
-    <div className="legal">
+    <div className="legal" lang={m.lang}>
+      <HtmlLang lang={m.lang} />
       <MarketPixels market={m} />
       <header className="legal-top">
         <a href={`/${m.id}`} aria-label={m.brand}><img src="/brand/atomic-method-logo.png" alt={m.brand} width={152} height={42} /></a>

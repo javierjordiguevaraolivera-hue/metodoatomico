@@ -71,6 +71,8 @@ export default function WhopCheckout({ market }: { market: Market }) {
         });
         h.create("checkout").mount(box.current);
         handle.current = h;
+        // Por si Whop no avisa que terminó de cargar: el formulario ya está montado, se quita el aviso.
+        setTimeout(() => { if (!cancelled) setState((s) => (s === "loading" ? "ready" : s)); }, 4000);
       })
       .catch(() => { if (!cancelled) setState("error"); });
     return () => {

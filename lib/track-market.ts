@@ -23,7 +23,7 @@ export function startMarketPixels(m: Market, userData: Record<string, string | u
 }
 
 export function trackMarket(m: Market, name: "ViewContent" | "InitiateCheckout") {
-  const data = { content_name: m.brand, content_type: "product", value: m.price, currency: m.currency };
+  const data = { content_name: m.brand, content_type: "product", value: m.trackValue, currency: m.trackCurrency };
   const id = newEventId(name.toLowerCase());
   window.fbq?.("track", name, data, { eventID: id });
   trackTikTok(name, data, id);

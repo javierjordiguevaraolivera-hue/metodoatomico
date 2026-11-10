@@ -115,8 +115,9 @@ export async function trackWhopPurchase(p: WhopPayment, market: Market, site: st
     country: p.billing_address?.country || browser?.country,
     externalId: md.vid || browser?.externalId,
   };
-  const value = p.total ? Number(p.total.amount) : market.price;
-  const currency = (p.total?.currency || market.currency).toUpperCase();
+  // Fijo en USD (25 en /us, 15 en /india) aunque el comprador pague en rupias u otra moneda.
+  const value = market.trackValue;
+  const currency = market.trackCurrency;
   const id = `purchase_${p.id}`;
   const sourceUrl = `${site}/${market.id}/thanks`;
   await Promise.all([

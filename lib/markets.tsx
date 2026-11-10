@@ -19,6 +19,9 @@ export type Market = {
   currency: string;
   /** Prefijo de order_id en Supabase: así se distingue de qué página vino cada venta. */
   orderPrefix: string;
+  /** Lo que reciben los píxeles y las APIs (ViewContent, InitiateCheckout, Purchase): siempre en USD, aunque Whop cobre en otra moneda. */
+  trackValue: number;
+  trackCurrency: "USD";
   whopPlan: string;
   metaPixel: string;
   tiktokPixel: string;
@@ -51,6 +54,8 @@ export const MARKETS: Record<MarketId, Market> = {
     price: 25,
     currency: "USD",
     orderPrefix: "us",
+    trackValue: 25,
+    trackCurrency: "USD",
     whopPlan: process.env.NEXT_PUBLIC_WHOP_PLAN_US || "",
     metaPixel: process.env.NEXT_PUBLIC_META_PIXEL_ID_US || "",
     tiktokPixel: process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID_US || "",
@@ -68,6 +73,8 @@ export const MARKETS: Record<MarketId, Market> = {
     price: 1299,
     currency: "INR",
     orderPrefix: "india",
+    trackValue: 15,
+    trackCurrency: "USD",
     whopPlan: process.env.NEXT_PUBLIC_WHOP_PLAN_INDIA || "",
     metaPixel: process.env.NEXT_PUBLIC_META_PIXEL_ID_INDIA || "",
     tiktokPixel: process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID_INDIA || "",

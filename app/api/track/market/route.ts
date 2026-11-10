@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       customData: typeof body.customData === "object" && body.customData ? body.customData : undefined,
     }),
     body.name !== "PageView" &&
-      sendTikTokEvent({ name: body.name, id: body.id, sourceUrl: url, person, value: market.price, currency: market.currency, contentName: market.brand, pixel: { id: market.tiktokPixel, token: keys.tiktokToken } }),
+      sendTikTokEvent({ name: body.name, id: body.id, sourceUrl: url, person, value: market.trackValue, currency: market.trackCurrency, contentName: market.brand, pixel: { id: market.tiktokPixel, token: keys.tiktokToken } }),
   ]);
   return NextResponse.json({ ok: true });
 }

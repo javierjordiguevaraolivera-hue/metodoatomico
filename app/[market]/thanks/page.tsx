@@ -39,7 +39,7 @@ export default async function Thanks({ params, searchParams }: {
       {paid && (
         <MarketPixels
           market={m}
-          purchase={{ paymentId: payment.id, value: payment.total ? Number(payment.total.amount) : m.price, currency: (payment.total?.currency || m.currency).toUpperCase() }}
+          purchase={{ paymentId: payment.id, value: m.trackValue, currency: m.trackCurrency }}
           userData={{ em: email || undefined, country: payment.billing_address?.country?.toLowerCase() || undefined }}
         />
       )}
